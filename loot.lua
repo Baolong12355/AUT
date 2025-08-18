@@ -58,3 +58,5 @@ startContinuousScanning()
 end
 
 findAndProcessChests()
+
+print("9kshd")
