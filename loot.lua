@@ -24,8 +24,7 @@ local function hasProximityInteraction(chest)
         return false
     end
     
-    local interaction = proximityAttachment:FindFirstChild("Interaction")
-    return interaction ~= nil
+    return proximityAttachment:FindFirstChild("Interaction") ~= nil
 end
 
 local function teleportToChest(chest)
@@ -36,10 +35,7 @@ local function teleportToChest(chest)
         
         local proximityAttachment = chest:FindFirstChild("ProximityAttachment")
         if proximityAttachment and proximityAttachment:FindFirstChild("Interaction") then
-            local interaction = proximityAttachment.Interaction
-            if interaction:FindFirstChild("ProximityPrompt") then
-                fireproximityprompt(interaction.ProximityPrompt)
-            end
+            fireproximityprompt(proximityAttachment.Interaction)
         end
     end
 end
