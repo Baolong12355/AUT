@@ -154,7 +154,7 @@ end
 
 spawn(function()
     AutoSaveList = fetchItemList(ITEM_LIST_URL)
-    wait(2)
+    wait(1)
     processAutoSaveAll()
 end)
 
