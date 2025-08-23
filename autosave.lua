@@ -1,4 +1,5 @@
 -- Auto Save Item Script - Dùng cho list được truyền vào (KHÔNG lấy trực tiếp từ item.txt)
+-- Set _G.ItemAutoSaving = true trước và = false sau khi hoàn tất, để combat script chủ động tạm dừng.
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -12,6 +13,7 @@ local GetCapacity = ReplicatedStorage.ReplicatedModules.KnitPackage.Knit.Service
 
 -- List này phải được truyền từ ngoài vào (loader/GUI)
 _G.AutoSaveList = _G.AutoSaveList or {} -- ví dụ: {"Sword", "Potion"}
+_G.ItemAutoSaving = _G.ItemAutoSaving or false
 
 local function getInventoryCapacity()
     local success, result = pcall(function()
@@ -90,21 +92,37 @@ local function hasPreventSave(item)
     return item:GetAttribute("PreventSave") == true
 end
 
-local function processAutoSaveForItem(itemName)
-    if not itemName or itemName == "" then return end
+-- Đảm bảo sync khi có async reset (bằng callback)
+local function processAutoSaveForItem(itemName, onFinish)
+    if not itemName or itemName == "" then
+        if onFinish then onFinish() end
+        return
+    end
     local currentCapacity, maxCapacity = getInventoryCapacity()
-    if currentCapacity >= maxCapacity then return end
+    if currentCapacity >= maxCapacity then
+        if onFinish then onFinish() end
+        return
+    end
 
     local targetItem = findItemInBackpack(itemName) or findItemInCharacter(itemName)
-    if not targetItem then return end
+    if not targetItem then
+        if onFinish then onFinish() end
+        return
+    end
 
     if targetItem.Parent == Backpack then
-        if not equipItem(targetItem) then return end
+        if not equipItem(targetItem) then
+            if onFinish then onFinish() end
+            return
+        end
         task.wait(0.02)
     end
 
     targetItem = findItemInCharacter(itemName)
-    if not targetItem then return end
+    if not targetItem then
+        if onFinish then onFinish() end
+        return
+    end
 
     if isCombatTagVisible() then
         if hasPreventSave(targetItem) then
@@ -114,6 +132,7 @@ local function processAutoSaveForItem(itemName)
                 local itemCheck = findItemInBackpack(itemName) or findItemInCharacter(itemName)
                 if not itemCheck then
                     escapeLoop:Disconnect()
+                    if onFinish then onFinish() end
                 end
             end)
             return
@@ -123,6 +142,7 @@ local function processAutoSaveForItem(itemName)
                 task.wait(1.5)
                 addItemToInventory()
                 respawnConnection:Disconnect()
+                if onFinish then onFinish() end
             end)
             resetCharacter()
             return
@@ -130,13 +150,29 @@ local function processAutoSaveForItem(itemName)
     else
         addItemToInventory()
         task.wait(0.1)
+        if onFinish then onFinish() end
     end
 end
 
 function _G.AutoSaveTrigger()
-    for _, itemName in ipairs(_G.AutoSaveList) do
-        processAutoSaveForItem(itemName)
+    _G.ItemAutoSaving = true
+    local n = #_G.AutoSaveList
+    if n == 0 then
+        _G.ItemAutoSaving = false
+        return
     end
+    local i = 1
+    local function nextItem()
+        if i > n then
+            _G.ItemAutoSaving = false
+            return
+        end
+        processAutoSaveForItem(_G.AutoSaveList[i], function()
+            i = i + 1
+            nextItem()
+        end)
+    end
+    nextItem()
 end
 
 -- Nếu muốn chạy tự động khi load script thì bật dòng này:
