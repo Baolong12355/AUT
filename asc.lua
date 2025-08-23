@@ -1,0 +1,46 @@
+-- Auto Ascend Script - Dạng bật/tắt qua _G.AutoAscendEnabled
+
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local LocalPlayer = Players.LocalPlayer
+
+_G.AutoAscendEnabled = _G.AutoAscendEnabled or false
+
+local function autoAscend()
+    local abilityId = LocalPlayer.Data.Ability.Value
+    if not abilityId then return end
+
+    local coinLabel = LocalPlayer.PlayerGui.UI.Menus.Ability.Tabs.Ascensions.AscendSection.Requirements.UCoins.AmountLabel
+    local levelLabel = LocalPlayer.PlayerGui.UI.Menus.Ability.Tabs.Ascensions.AscendSection.Requirements.Level.AmountLabel
+
+    if not coinLabel or not levelLabel then return end
+
+    local coinText = coinLabel.ContentText or ""
+    local levelText = levelLabel.ContentText or ""
+
+    if coinText == "" or levelText == "" then return end
+
+    local currentCoins, requiredCoins = coinText:match("(%d+)%s*/%s*(%d+)")
+    if not currentCoins or not requiredCoins then return end
+    currentCoins = tonumber(currentCoins)
+    requiredCoins = tonumber(requiredCoins)
+
+    local currentLevel, requiredLevel = levelText:match("(%d+)%s*/%s*(%d+)")
+    if not currentLevel or not requiredLevel then return end
+    currentLevel = tonumber(currentLevel)
+    requiredLevel = tonumber(requiredLevel)
+
+    if currentCoins >= requiredCoins and currentLevel >= requiredLevel then
+        local AscendAbility = ReplicatedStorage.ReplicatedModules.KnitPackage.Knit.Services.LevelService.RF.AscendAbility
+        AscendAbility:InvokeServer(abilityId)
+    end
+end
+
+task.spawn(function()
+    while true do
+        if _G.AutoAscendEnabled then
+            pcall(autoAscend)
+        end
+        task.wait(0.1)
+    end
+end)
