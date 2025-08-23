@@ -1,3 +1,7 @@
+-- Auto Combat Script with Crate and Auto Save Pause Logic
+-- Combat will pause whenever you are auto saving item(s) or collecting crate. 
+-- When these processes finish, combat resumes immediately (no delay, no reset position).
+
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -8,6 +12,7 @@ _G.CombatEnabled = _G.CombatEnabled or false
 _G.CombatTargetType = _G.CombatTargetType or "cultists"
 _G.CombatEscapeHeight = _G.CombatEscapeHeight or 30
 _G.CrateCollecting = _G.CrateCollecting or false
+_G.ItemAutoSaving = _G.ItemAutoSaving or false
 _G.SlayerQuestActive = _G.SlayerQuestActive or false
 
 local combatSettings = {
@@ -171,19 +176,19 @@ end
 
 spawn(function()
     while true do
-        -- Nếu đang nhặt crate thì dừng combat hoàn toàn (KHÔNG thêm task.wait mới, chỉ skip vòng, giữ các wait cũ bên dưới)
-        if _G.CrateCollecting then
-            -- Đợi crate xong, không làm gì, không thêm delay ở đây!
+        -- Pause combat if collecting crate or auto saving items
+        if _G.CrateCollecting or _G.ItemAutoSaving then
+            task.wait(0.05)
         elseif not _G.CombatEnabled then
+            task.wait(1)
         else
-            -- Chọn target
             if not currentTarget or not isTargetAlive(currentTarget) then
                 currentTarget = findRandomTarget()
             end
 
-            -- Không có target thì về vị trí chờ
             if not currentTarget then
                 teleportToPosition(waitPositions[_G.CombatTargetType] or Vector3.new())
+                task.wait(0.3)
             else
                 isInCombat = true
                 if isStunned() or isRagdolled() then
@@ -204,7 +209,13 @@ spawn(function()
                 end
 
                 spawn(function()
-                    while not hasCooldown("MOUSEBUTTON1") and _G.CombatEnabled and isInCombat and not shouldEscape and isTargetAlive(currentTarget) and not _G.CrateCollecting do
+                    while not hasCooldown("MOUSEBUTTON1")
+                        and _G.CombatEnabled
+                        and isInCombat
+                        and not shouldEscape
+                        and isTargetAlive(currentTarget)
+                        and not _G.CrateCollecting
+                        and not _G.ItemAutoSaving do
                         useSkill("MOUSEBUTTON1")
                         task.wait(0.05)
                     end
@@ -212,7 +223,6 @@ spawn(function()
             end
             task.wait(0.15)
         end
-        -- Không thêm task.wait ở đây! (giữ nguyên logic wait cũ)
     end
 end)
 
