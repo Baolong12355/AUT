@@ -1,6 +1,4 @@
--- Auto Save Item Script - Mẫu mới: Không log, không print, không callback
-
-local ITEM_LIST_URL = "https://raw.githubusercontent.com/Baolong12355/AUT/refs/heads/main/item.txt"
+-- Auto Save Item Script - Dùng cho list được truyền vào (KHÔNG lấy trực tiếp từ item.txt)
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -12,19 +10,8 @@ local Backpack = Player:WaitForChild("Backpack")
 local ItemInventory = ReplicatedStorage.ReplicatedModules.KnitPackage.Knit.Services.InventoryService.RE.ItemInventory
 local GetCapacity = ReplicatedStorage.ReplicatedModules.KnitPackage.Knit.Services.InventoryService.RF.GetCapacity
 
-local AutoSaveList = {}
-
-local function fetchItemList(url)
-    local list = {}
-    local success, data = pcall(function() return game:HttpGet(url) end)
-    if success and data then
-        for _, line in ipairs(string.split(data, "\n")) do
-            local name = string.gsub(line, "\r", ""):match("^%s*(.-)%s*$")
-            if name ~= "" then table.insert(list, name) end
-        end
-    end
-    return list
-end
+-- List này phải được truyền từ ngoài vào (loader/GUI)
+_G.AutoSaveList = _G.AutoSaveList or {} -- ví dụ: {"Sword", "Potion"}
 
 local function getInventoryCapacity()
     local success, result = pcall(function()
@@ -113,7 +100,7 @@ local function processAutoSaveForItem(itemName)
 
     if targetItem.Parent == Backpack then
         if not equipItem(targetItem) then return end
-        wait()
+        task.wait(0.02)
     end
 
     targetItem = findItemInCharacter(itemName)
@@ -133,7 +120,7 @@ local function processAutoSaveForItem(itemName)
         else
             local respawnConnection
             respawnConnection = Player.CharacterAdded:Connect(function(newCharacter)
-                wait(1.5)
+                task.wait(1.5)
                 addItemToInventory()
                 respawnConnection:Disconnect()
             end)
@@ -142,27 +129,15 @@ local function processAutoSaveForItem(itemName)
         end
     else
         addItemToInventory()
-        wait(0.1)
+        task.wait(0.1)
     end
 end
 
-local function processAutoSaveAll()
-    for _, itemName in ipairs(AutoSaveList) do
+function _G.AutoSaveTrigger()
+    for _, itemName in ipairs(_G.AutoSaveList) do
         processAutoSaveForItem(itemName)
     end
 end
 
-spawn(function()
-    AutoSaveList = fetchItemList(ITEM_LIST_URL)
-    wait(1)
-    processAutoSaveAll()
-end)
-
-game:GetService("UserInputService").InputBegan:Connect(function(input, gameProcessed)
-    if gameProcessed then return end
-    if input.KeyCode == Enum.KeyCode.L then
-        processAutoSaveAll()
-    end
-end)
-
-_G.AutoSaveTrigger = processAutoSaveAll
+-- Nếu muốn chạy tự động khi load script thì bật dòng này:
+-- _G.AutoSaveTrigger()
