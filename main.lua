@@ -1,3 +1,4 @@
+-- AUT Main Loader - Quản lý tất cả script với Rayfield GUI
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
 -- Services
@@ -21,7 +22,8 @@ local SCRIPTS = {
     crate = REPO_BASE .. "crate.lua",
     combat = REPO_BASE .. "combat.lua",
     asc = REPO_BASE .. "asc.lua",
-    specialgrade = REPO_BASE .. "SpecialGradeQuest.lua"
+    specialgrade = REPO_BASE .. "SpecialGradeQuest.lua",
+    speciallevelfarm = REPO_BASE .. "SpecialLevelFarm.lua" -- THÊM DÒNG NÀY
 }
 
 -- Item list dùng trực tiếp (không lấy từ link)
