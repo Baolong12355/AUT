@@ -292,7 +292,7 @@ local CrateToggle = ItemTab:CreateToggle({
 })
 
 local CrateDelaySlider = ItemTab:CreateSlider({
-    Name = "Crate Check Delay (giây)",
+    Name = "Crate Check Delay",
     Range = {10, 300},
     Increment = 10,
     CurrentValue = 60,
@@ -303,7 +303,7 @@ local CrateDelaySlider = ItemTab:CreateSlider({
 })
 
 local CrateTPDelaySlider = ItemTab:CreateSlider({
-    Name = "Crate TP Delay (giây)",
+    Name = "Crate TP Delay",
     Range = {0.1, 2},
     Increment = 0.1,
     CurrentValue = 0.1,
@@ -352,7 +352,7 @@ local SpecialGradeToggle = QuestTab:CreateToggle({
 })
 
 local SpecialGradeDelaySlider = QuestTab:CreateSlider({
-    Name = "Special Grade Delay (giây)",
+    Name = "Special Grade Delay",
     Range = {30, 300},
     Increment = 30,
     CurrentValue = 60,
@@ -373,6 +373,77 @@ local TraitToggle = TraitTab:CreateToggle({
         _G.TraitAutoPickEnabled = Value
         if Value and not _G.LoadedScripts.trait then
             loadScript("trait", SCRIPTS.trait)
+        end
+    end
+})
+
+-- Legendary Traits
+local LegendaryTraitsDropdown = TraitTab:CreateDropdown({
+    Name = "Legendary Traits Ưu Tiên",
+    Options = {"Prime", "Angelic", "Solar", "Cursed", "Vampiric", "Gluttonous", "Voided", "Gambler", "Overflowing", "Deferred", "True", "Cultivation", "Economic"},
+    CurrentOption = {"Prime"},
+    MultipleOptions = true,
+    Flag = "LegendaryTraits",
+    Callback = function(Options)
+        _G.TraitList_Legendary = Options
+    end
+})
+
+-- Legendary Hexed Traits
+local LegendaryHexedTraitsDropdown = TraitTab:CreateDropdown({
+    Name = "Legendary Hexed Traits",
+    Options = {"Overconfident Prime", "Fallen Angelic", "Icarus Solar", "Undying Cursed", "Ancient Vampiric", "Festering Gluttonous", "Abyssal Voided", "Idle Death Gambler", "Torrential Overflowing", "Fractured Deferred", "Vitriolic True", "Soul Reaping Cultivation", "Greedy Economic"},
+    CurrentOption = {"Overconfident Prime"},
+    MultipleOptions = true,
+    Flag = "LegendaryHexedTraits",
+    Callback = function(Options)
+        _G.TraitList_LegendaryHexed = Options
+    end
+})
+
+-- Mythic Traits
+local MythicTraitsDropdown = TraitTab:CreateDropdown({
+    Name = "Mythic Traits Ưu Tiên",
+    Options = {"Godly", "Temporal", "RCT", "Spiritual", "Ryoiki", "Adaptation"},
+    CurrentOption = {"Godly"},
+    MultipleOptions = true,
+    Flag = "MythicTraits",
+    Callback = function(Options)
+        _G.TraitList_Mythic = Options
+    end
+})
+
+-- Mythic Hexed Traits
+local MythicHexedTraitsDropdown = TraitTab:CreateDropdown({
+    Name = "Mythic Hexed Traits",
+    Options = {"Egotistic Godly", "FTL Temporal", "Automatic RCT", "Mastered Spiritual", "Overcharged Ryoiki", "Unbound Adaptation"},
+    CurrentOption = {"Egotistic Godly"},
+    MultipleOptions = true,
+    Flag = "MythicHexedTraits",
+    Callback = function(Options)
+        _G.TraitList_MythicHexed = Options
+    end
+})
+
+local TraitHistoryButton = TraitTab:CreateButton({
+    Name = "Xem 5 Trait Đã Discard",
+    Callback = function()
+        if _G.TraitDiscardHistory and #_G.TraitDiscardHistory > 0 then
+            local historyText = "Trait đã discard:\n"
+            for i, traits in ipairs(_G.TraitDiscardHistory) do
+                historyText = historyText .. i .. ". " .. traits .. "\n"
+            end
+            Rayfield:Notify({
+                Title = "Lịch Sử Trait",
+                Content = historyText,
+                Duration = 8
+            })
+        else
+            Rayfield:Notify({
+                Title = "Không Có Lịch Sử",
+                Content = "Chưa discard trait nào",
+                Duration = 3
+            })
         end
     end
 })
