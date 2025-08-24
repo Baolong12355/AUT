@@ -1,9 +1,9 @@
--- Auto Save Item Script - Dùng cho list được truyền vào (KHÔNG lấy trực tiếp từ item.txt)
--- Set _G.ItemAutoSaving = true trước và = false sau khi hoàn tất, để combat script chủ động tạm dừng.
+-- Auto Save Item Script - Load item list từ GitHub và cho phép chọn items
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
+local HttpService = game:GetService("HttpService")
 
 local Player = Players.LocalPlayer
 local PlayerGui = Player:WaitForChild("PlayerGui")
@@ -11,9 +11,30 @@ local Backpack = Player:WaitForChild("Backpack")
 local ItemInventory = ReplicatedStorage.ReplicatedModules.KnitPackage.Knit.Services.InventoryService.RE.ItemInventory
 local GetCapacity = ReplicatedStorage.ReplicatedModules.KnitPackage.Knit.Services.InventoryService.RF.GetCapacity
 
--- List này phải được truyền từ ngoài vào (loader/GUI)
-_G.AutoSaveList = _G.AutoSaveList or {} -- ví dụ: {"Sword", "Potion"}
+-- Global variables cho external control
+_G.AutoSaveEnabled = _G.AutoSaveEnabled or false
+_G.AutoSaveSelectedItems = _G.AutoSaveSelectedItems or {} -- Items được chọn để save
 _G.ItemAutoSaving = _G.ItemAutoSaving or false
+_G.AvailableItems = _G.AvailableItems or {} -- Danh sách items từ GitHub
+
+-- Load item list từ GitHub
+local function loadItemListFromGitHub()
+    local success, result = pcall(function()
+        return game:HttpGet("https://raw.githubusercontent.com/Baolong12355/AUT/refs/heads/main/item.txt")
+    end)
+    
+    if success then
+        _G.AvailableItems = {}
+        for line in result:gmatch("[^\r\n]+") do
+            local trimmed = line:gsub("^%s+", ""):gsub("%s+$", "")
+            if trimmed ~= "" then
+                table.insert(_G.AvailableItems, trimmed)
+            end
+        end
+        return true
+    end
+    return false
+end
 
 local function getInventoryCapacity()
     local success, result = pcall(function()
@@ -92,7 +113,6 @@ local function hasPreventSave(item)
     return item:GetAttribute("PreventSave") == true
 end
 
--- Đảm bảo sync khi có async reset (bằng callback)
 local function processAutoSaveForItem(itemName, onFinish)
     if not itemName or itemName == "" then
         if onFinish then onFinish() end
@@ -154,20 +174,20 @@ local function processAutoSaveForItem(itemName, onFinish)
     end
 end
 
-function _G.AutoSaveTrigger()
+-- Main auto save function
+function _G.TriggerAutoSave()
+    if not _G.AutoSaveEnabled or #_G.AutoSaveSelectedItems == 0 then return end
+    
     _G.ItemAutoSaving = true
-    local n = #_G.AutoSaveList
-    if n == 0 then
-        _G.ItemAutoSaving = false
-        return
-    end
+    local n = #_G.AutoSaveSelectedItems
     local i = 1
+    
     local function nextItem()
         if i > n then
             _G.ItemAutoSaving = false
             return
         end
-        processAutoSaveForItem(_G.AutoSaveList[i], function()
+        processAutoSaveForItem(_G.AutoSaveSelectedItems[i], function()
             i = i + 1
             nextItem()
         end)
@@ -175,5 +195,20 @@ function _G.AutoSaveTrigger()
     nextItem()
 end
 
--- Nếu muốn chạy tự động khi load script thì bật dòng này:
--- _G.AutoSaveTrigger()
+-- Auto save loop
+spawn(function()
+    while true do
+        if _G.AutoSaveEnabled then
+            _G.TriggerAutoSave()
+            task.wait(5) -- Check every 5 seconds
+        else
+            task.wait(1)
+        end
+    end
+end)
+
+-- Load item list khi khởi động
+spawn(function()
+    task.wait(1)
+    loadItemListFromGitHub()
+end)
