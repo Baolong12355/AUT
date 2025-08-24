@@ -1,4 +1,3 @@
--- AUT Main Loader - Quản lý tất cả script với Rayfield GUI
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
 -- Services
@@ -523,7 +522,7 @@ local FeedToggle = TraitTab:CreateToggle({
     end
 })
 
--- === SETTINGS TAB ===
+--- === SETTINGS TAB ===
 SettingsTab:CreateSection("Banner Roll")
 
 local BannerToggle = SettingsTab:CreateToggle({
@@ -536,6 +535,25 @@ local BannerToggle = SettingsTab:CreateToggle({
             loadScript("rollbanner", SCRIPTS.rollbanner)
         end
     end
+})
+
+SettingsTab:CreateSection("level fram")
+
+local SpecialLevelFarmToggle = SettingsTab:CreateToggle({
+    Name = "special leveling",
+    CurrentValue = false,
+    Flag = "SpecialLevelFarmEnabled",
+    Callback = function(Value)
+        _G.SpecialLevelFarmEnabled = Value
+        if Value and not _G.LoadedScripts.speciallevelfarm then
+            loadScript("speciallevelfarm", SCRIPTS.speciallevelfarm)
+        end
+    end
+})
+
+SettingsTab:CreateParagraph({
+    Title = "Ghi chú Max Item Bank",
+    Content = "• Tự động nâng max item bank cho Hamon Base.\n• Yêu cầu: ĐÃ LÀM QUEST của Joseph's Informant và đang ở Hamon Base!"
 })
 
 SettingsTab:CreateSection("Thông Tin")
