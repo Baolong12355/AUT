@@ -1,4 +1,4 @@
--- AUT Main Loader - Quản lý tất cả script với Rayfield GUI (Đã fix đồng bộ danh sách item, auto sell mặc định không rỗng, ...)
+-- AUT Main Loader - Quản lý tất cả script với Rayfield GUI
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
 -- Services
@@ -8,7 +8,6 @@ local LocalPlayer = Players.LocalPlayer
 
 -- GitHub repository URLs
 local REPO_BASE = "https://raw.githubusercontent.com/Baolong12355/AUT/main/"
-local ITEM_LIST_URL = "https://raw.githubusercontent.com/Baolong12355/AUT/refs/heads/main/item.txt"
 
 -- Scripts URLs
 local SCRIPTS = {
@@ -26,43 +25,60 @@ local SCRIPTS = {
     specialgrade = REPO_BASE .. "SpecialGradeQuest.lua"
 }
 
--- Global variables initialization
-_G.AvailableItems = _G.AvailableItems or {}
-_G.LoadedScripts = _G.LoadedScripts or {}
+-- Item list dùng trực tiếp (không lấy từ link)
+_G.AvailableItems = {
+    "Mining Laser", "Phoenix Gemstone", "Jonathan's Signal", "Coal Loot", "Medic's Equipment",
+    "A New Fable", "Cursed Orb", "Blood of Joseph", "The Total Force Of Calamity", "Spin Energy Fragment",
+    "Umbra's Calamity Force", "Inverted Spear of Heaven", "Light of Hope", "Arrow", "Chest Key",
+    "Bone", "Heart", "Shaper's Essence", "Ban Hammer", "Chargin' Targe", "Yo-Yo",
+    "Mysterious Fragment", "Shanks' Calamity Force", "Clackers", "Joestar Blood Vial",
+    "Heavenly Restriction Awakening", "Knife", "Claw Fragment", "Gojo's Blindfold", "Stocking",
+    "Sorcerer's Scarf", "Green Baby", "Busoshoku Manual", "Azakana Mask", "Sovereign's Sword",
+    "West Blue Juice", "Heart of the Saint", "Paintball Gun", "Candy Bag", "Camellite",
+    "Nanotech Fragments", "Limitless Technique Scroll", "Sukuna's Calamity Force", "Requiem Arrow",
+    "Dio's Charm", "Superball", "Death Painting", "Candy Cutlass Blade", "Demonic Scroll",
+    "Dragon Ball", "NUCLEAR-CORE", "Watch", "Kuma's Book", "Saints Skull", "Vampirism Mastery",
+    "Stone Mask", "Saints Arms", "Soul Gemstone", "Sorcerer Killer Shard", "Saints Eyes",
+    "Corrupted Arrow", "Mero Devil Fruit", "Dragon Slayer", "Remembrance of the Sorcerer Killer",
+    "Split Soul Katana", "Refined Camellite", "Golden Hook", "Rocket Launcher",
+    "Remembrance of the Fallen", "Anshen's Leg Plates", "Tales Of The Universe", "Caesar's Headband",
+    "DIO's Bone", "Mahoraga's Calamity Force", "Flamethrower", "Evil Fragments", "Worn Out Scarf",
+    "Strange Briefcase", "Bomb", "Anshen's Lance", "Joseph's Signal", "Anshen's Arm Plates",
+    "Cultist Staff", "Camellite Arrow", "SHAPER // SWORD", "Cosmic Remnant", "The Vessel Shard",
+    "Kars' Calamity Force", "Calibrated Manifold", "STAR SEED", "Harmonic Decoder", "Sukuna's Finger",
+    "Heavenly Nectar", "Dormant Staff", "Dormant Dagger", "Hito Devil Fruit", "Cosmic Fragments",
+    "Meat On A Bone", "Fractured Sigil", "Geode", "Keycard", "The Denzien Of Hell's Calamity Force",
+    "Bait Vampire Mask", "Camellite Fragment", "Mining Laser MK2", "Catalyst", "Crystalline Core",
+    "Inhumane Spirit", "Shadow's Calamity Force", "Whitebeard's Calamity Force", "Locacaca",
+    "Fragment of Death", "Ancient Sword", "Metal Loot", "Anshen's Suit", "DIO's Diary",
+    "King of Curses Shard", "Mysterious Hat", "Slingshot", "Sovereign's Chapter", "Cultist Dagger",
+    "Remembrance of the Strongest", "Anshen's Helmet", "Draconic Gemstone", "Cursed Arm",
+    "Metal Ingot", "Gun Parts", "Metal Scraps", "Bisento", "Bouquet Of Flowers", "Eyelander",
+    "Cursed Gemstone", "Letter to Jonathan", "Aja Stone", "Hamon Imbued Frog", "Altered Steel Ball",
+    "Manual of Gryphon's Techniques", "Cursed Apple", "Shrine Item", "Godly Doctor's Poison",
+    "Anshen's Chestplate", "Simple Domain Essence", "Slime Energy", "Anshen's Wing Set",
+    "Haki Shard", "Remembrance of the Vessel", "Kenbunshoku Manual", "Monochromatic Gemstone",
+    "Arm Band", "Bat", "Haoshoku Manual", "Wheel of Dharma", "Playful Cloud", "Knight's Blade",
+    "Pumpkin", "Coal", "Saints Legs", "Rundown Mask", "Corrupted Soul", "Kinetic Orb",
+    "Letter to Joseph", "Saints Ribcage", "Jonathan's Worn Out Gloves", "Sword", "Gomu Devil Fruit",
+    "Kinetic Gemstone", "True Stone Mask", "Baroque Works Contractor Den Den", "Sanji's Cookbook",
+    "Ope Devil Fruit", "Grenade Launcher", "Dio's Remains", "Suna Devil Fruit", "Used Arrow",
+    "Tactical Vest", "Law's Cap", "Frog", "Trowel", "Saint's Corpse", "Monochromatic Orb"
+}
+
+_G.LoadedScripts = {}
 
 -- Default values
-_G.AutoSaveSelectedItems = _G.AutoSaveSelectedItems or {}
-_G.AutoSellExcludeList = _G.AutoSellExcludeList or {}
-_G.CombatSelectedSkills = _G.CombatSelectedSkills or {"B"}
+_G.AutoSaveSelectedItems = {}
+_G.AutoSellExcludeList = {}
+_G.CombatSelectedSkills = {"B"}
 
--- Load item list from GitHub
-local function loadItemList()
-    local success, result = pcall(function()
-        return game:HttpGet(ITEM_LIST_URL)
-    end)
-    if success then
-        _G.AvailableItems = {}
-        for line in result:gmatch("[^\r\n]+") do
-            local trimmed = line:gsub("^%s+", ""):gsub("%s+$", "")
-            if trimmed ~= "" then
-                table.insert(_G.AvailableItems, trimmed)
-            end
-        end
-        -- Nếu AutoSave hoặc AutoSell list rỗng, tự động fill ALL (và cập nhật dropdown)
-        if #_G.AutoSaveSelectedItems == 0 then
-            _G.AutoSaveSelectedItems = table.clone(_G.AvailableItems)
-        end
-        if #_G.AutoSellExcludeList == 0 then
-            _G.AutoSellExcludeList = table.clone(_G.AvailableItems)
-        end
-        return true
-    end
-    return false
-end
+-- Không còn hàm loadItemList, mọi nơi dùng _G.AvailableItems trực tiếp
 
 -- Load script from GitHub
 local function loadScript(name, url)
     if _G.LoadedScripts[name] then return true end
+
     local success, result = pcall(function()
         return loadstring(game:HttpGet(url))()
     end)
@@ -97,32 +113,6 @@ local SettingsTab = Window:CreateTab("Cài Đặt", "settings")
 
 -- === MAIN TAB ===
 MainTab:CreateSection("Tải Script")
-
-local LoadItemsButton = MainTab:CreateButton({
-    Name = "Tải Danh Sách Item",
-    Callback = function()
-        if loadItemList() then
-            -- Cập nhật dropdown nếu có
-            if AutoSaveItemsDropdown and AutoSaveExcludeDropdown then
-                AutoSaveItemsDropdown:Set(_G.AvailableItems)
-                AutoSellExcludeDropdown:Set(_G.AvailableItems)
-            end
-            Rayfield:Notify({
-                Title = "Thành công",
-                Content = "Đã tải " .. #_G.AvailableItems .. " items",
-                Duration = 3,
-                Image = "check"
-            })
-        else
-            Rayfield:Notify({
-                Title = "Lỗi",
-                Content = "Không thể tải danh sách item",
-                Duration = 3,
-                Image = "x"
-            })
-        end
-    end
-})
 
 local LoadAllButton = MainTab:CreateButton({
     Name = "Tải Tất Cả Script",
@@ -197,7 +187,7 @@ local availableSkills = {
 local CombatSkillsDropdown = CombatTab:CreateDropdown({
     Name = "Chọn Skills Combat",
     Options = availableSkills,
-    CurrentOption = _G.CombatSelectedSkills,
+    CurrentOption = {"B"},
     MultipleOptions = true,
     Flag = "CombatSkills",
     Callback = function(Options)
@@ -234,18 +224,14 @@ local AutoSaveToggle = ItemTab:CreateToggle({
     end
 })
 
--- Dropdown để chọn items cần save
-AutoSaveItemsDropdown = ItemTab:CreateDropdown({
+local AutoSaveItemsDropdown = ItemTab:CreateDropdown({
     Name = "Chọn Items Cần Save",
     Options = _G.AvailableItems,
-    CurrentOption = _G.AutoSaveSelectedItems,
+    CurrentOption = {},
     MultipleOptions = true,
     Flag = "AutoSaveItems",
     Callback = function(Options)
         _G.AutoSaveSelectedItems = Options
-        if #Options == 0 then
-            _G.AutoSaveSelectedItems = table.clone(_G.AvailableItems)
-        end
     end
 })
 
@@ -272,26 +258,17 @@ local AutoSellToggle = ItemTab:CreateToggle({
         if Value and not _G.LoadedScripts.sell then
             loadScript("sell", SCRIPTS.sell)
         end
-        -- Đảm bảo list không rỗng nếu user bật auto sell khi list rỗng
-        if #_G.AutoSellExcludeList == 0 then
-            _G.AutoSellExcludeList = table.clone(_G.AvailableItems)
-        end
     end
 })
 
--- Dropdown để chọn items KHÔNG bán
-AutoSellExcludeDropdown = ItemTab:CreateDropdown({
+local AutoSellExcludeDropdown = ItemTab:CreateDropdown({
     Name = "Chọn Items KHÔNG Bán",
     Options = _G.AvailableItems,
-    CurrentOption = _G.AutoSellExcludeList,
+    CurrentOption = {},
     MultipleOptions = true,
     Flag = "AutoSellExclude",
     Callback = function(Options)
-        if #Options == 0 then
-            _G.AutoSellExcludeList = table.clone(_G.AvailableItems)
-        else
-            _G.AutoSellExcludeList = Options
-        end
+        _G.AutoSellExcludeList = Options
     end
 })
 
@@ -588,17 +565,6 @@ local ReloadAllButton = SettingsTab:CreateButton({
         })
     end
 })
-
--- Auto load item list khi khởi động
-spawn(function()
-    wait(2)
-    if loadItemList() then
-        if AutoSaveItemsDropdown and AutoSellExcludeDropdown then
-            AutoSaveItemsDropdown:Set(_G.AvailableItems)
-            AutoSellExcludeDropdown:Set(_G.AvailableItems)
-        end
-    end
-end)
 
 Rayfield:Notify({
     Title = "AUT Hub Loaded",
