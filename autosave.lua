@@ -207,8 +207,10 @@ spawn(function()
     end
 end)
 
--- Load item list khi khởi động
+-- Load item list ngay khi script khởi động
 spawn(function()
-    task.wait(1)
     loadItemListFromGitHub()
+    if #_G.AvailableItems > 0 and #_G.AutoSaveSelectedItems == 0 then
+        _G.AutoSaveSelectedItems = _G.AvailableItems -- Load all items by default
+    end
 end)
