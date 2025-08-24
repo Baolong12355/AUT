@@ -1,4 +1,4 @@
--- Equipment Crate Auto Collector (Bật/tắt, chỉ dừng combat khi thực sự nhặt crate)
+-- Equipment Crate Auto Collector (Tối ưu: chỉ TP 1 lần mỗi vòng, chỉ loop khi phát hiện crate)
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -27,6 +27,7 @@ local function teleportTo(position)
     end
 end
 
+-- Kiểm tra và nhặt crate tại vị trí, trả về true nếu có crate được nhặt
 local function checkAndCollectCrate()
     local itemSpawns = workspace:FindFirstChild("ItemSpawns")
     if not itemSpawns then return false end
@@ -41,25 +42,26 @@ local function checkAndCollectCrate()
             if proximityAttachment then
                 local interaction = proximityAttachment:FindFirstChild("Interaction")
                 if interaction and interaction.Enabled then
-                    -- Đánh dấu đang nhặt crate
                     _G.CrateCollecting = true
 
                     teleportTo(crate.Position)
-                    while interaction.Enabled do
+                    while interaction.Enabled and _G.CrateCollectorEnabled do
                         fireproximityprompt(interaction)
                         task.wait(0.1)
                     end
 
                     -- Gọi remote
                     local args = {[1] = "TurnInCrate"}
-                    ReplicatedStorage:WaitForChild("ReplicatedModules")
-                        :WaitForChild("KnitPackage")
-                        :WaitForChild("Knit")
-                        :WaitForChild("Services")
-                        :WaitForChild("DialogueService")
-                        :WaitForChild("RF")
-                        :WaitForChild("CheckRequirement")
-                        :InvokeServer(unpack(args))
+                    pcall(function()
+                        ReplicatedStorage:WaitForChild("ReplicatedModules")
+                            :WaitForChild("KnitPackage")
+                            :WaitForChild("Knit")
+                            :WaitForChild("Services")
+                            :WaitForChild("DialogueService")
+                            :WaitForChild("RF")
+                            :WaitForChild("CheckRequirement")
+                            :InvokeServer(unpack(args))
+                    end)
 
                     _G.CrateCollecting = false
                     return true
@@ -70,25 +72,6 @@ local function checkAndCollectCrate()
     return false
 end
 
-local function checkSpawnLocationAtPosition(position)
-    local itemSpawns = workspace:FindFirstChild("ItemSpawns")
-    if not itemSpawns then return false end
-
-    local labCrate = itemSpawns:FindFirstChild("LabCrate")
-    if not labCrate then return false end
-
-    for _, spawnLocation in pairs(labCrate:GetChildren()) do
-        if spawnLocation.Name == "SpawnLocation" and spawnLocation.Position then
-            local distance = (spawnLocation.Position - position).Magnitude
-            if distance < 50 then
-                return true
-            end
-        end
-    end
-
-    return false
-end
-
 spawn(function()
     while true do
         if _G.CrateCollectorEnabled then
@@ -96,15 +79,14 @@ spawn(function()
             for _, pos in ipairs(spawnPositions) do
                 teleportTo(pos)
                 task.wait(_G.CrateTPDelay or 0.1)
-
-                if checkSpawnLocationAtPosition(pos) then
-                    if checkAndCollectCrate() then
-                        foundCrate = true
-                        break
-                    end
+                -- Chỉ kiểm tra crate sau khi TP, nếu có crate thì nhặt và dừng vòng
+                if checkAndCollectCrate() then
+                    foundCrate = true
+                    break -- chỉ nhặt 1 crate, không TP nữa cho đến vòng tiếp theo
                 end
             end
-            _G.CrateCollecting = false -- reset nếu không có crate nào
+            _G.CrateCollecting = false
+            -- Nếu không có crate nào, đợi lâu hơn; nếu có crate vừa nhặt xong thì cũng đợi (tránh spam TP)
             task.wait(_G.CrateLoopDelay or 60)
         else
             _G.CrateCollecting = false
