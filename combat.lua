@@ -1,6 +1,4 @@
--- Auto Combat Script with Crate and Auto Save Pause Logic
--- Combat will pause whenever you are auto saving item(s) or collecting crate. 
--- When these processes finish, combat resumes immediately (no delay, no reset position).
+-- Auto Combat Script với chest priority và reset target khi đổi settings
 
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
@@ -8,18 +6,23 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Workspace = game:GetService("Workspace")
 local localPlayer = Players.LocalPlayer
 
+-- Global settings
 _G.CombatEnabled = _G.CombatEnabled or false
 _G.CombatTargetType = _G.CombatTargetType or "cultists"
 _G.CombatEscapeHeight = _G.CombatEscapeHeight or 30
+_G.CombatSelectedSkills = _G.CombatSelectedSkills or {"B"}
 _G.CrateCollecting = _G.CrateCollecting or false
 _G.ItemAutoSaving = _G.ItemAutoSaving or false
 _G.SlayerQuestActive = _G.SlayerQuestActive or false
+_G.LootEnabled = _G.LootEnabled or false
 
 local combatSettings = {
-    selectedSkills = {"B"},
+    selectedSkills = _G.CombatSelectedSkills,
     escapeHeight = _G.CombatEscapeHeight,
     targetType = _G.CombatTargetType,
-    currentSkillIndex = 1
+    currentSkillIndex = 1,
+    lastEnabled = _G.CombatEnabled,
+    lastTargetType = _G.CombatTargetType
 }
 
 local targetLists = {
@@ -47,6 +50,7 @@ local isInCombat = false
 local shouldEscape = false
 local lastSkillTime = {}
 local lastSkillUse = 0
+local chestToLoot = nil
 
 local slayerBossMap = {
     ["dragon"] = "The Knight",
@@ -155,6 +159,32 @@ local function getSlayerBossTarget()
     return nil
 end
 
+-- Check for available chest to loot
+local function checkForChestToLoot()
+    if not _G.LootEnabled then return nil end
+    
+    for _, chest in ipairs(workspace:GetDescendants()) do
+        if chest:IsA("BasePart") and chest.Name:lower():find("chest") then
+            local pa = chest:FindFirstChild("ProximityAttachment")
+            if pa then
+                local prompt = pa:FindFirstChild("Interaction")
+                if prompt and prompt:IsA("ProximityPrompt") and prompt.Enabled then
+                    -- Check if whitelisted
+                    local whitelist = chest:FindFirstChild("Whitelisted")
+                    if whitelist and whitelist:IsA("Folder") then
+                        for _, v in ipairs(whitelist:GetChildren()) do
+                            if tonumber(v.Name) == localPlayer.UserId then
+                                return chest
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end
+    return nil
+end
+
 local function findRandomTarget()
     local validTargets = {}
     if _G.SlayerQuestActive then
@@ -174,59 +204,122 @@ local function findRandomTarget()
     return nil
 end
 
+-- Reset target function
+function _G.ResetCombatTarget()
+    currentTarget = nil
+    chestToLoot = nil
+end
+
+-- Combat loop với chest priority
 spawn(function()
     while true do
-        -- Pause combat if collecting crate or auto saving items
+        -- Check for setting changes and reset if needed
+        if combatSettings.lastEnabled ~= _G.CombatEnabled or 
+           combatSettings.lastTargetType ~= _G.CombatTargetType then
+            _G.ResetCombatTarget()
+            combatSettings.lastEnabled = _G.CombatEnabled
+            combatSettings.lastTargetType = _G.CombatTargetType
+        end
+        
+        -- Sync combat skills
+        combatSettings.selectedSkills = _G.CombatSelectedSkills or {"B"}
+        
+        -- Pause combat for various reasons
         if _G.CrateCollecting or _G.ItemAutoSaving then
             task.wait(0.05)
         elseif not _G.CombatEnabled then
             task.wait(1)
         else
-            if not currentTarget or not isTargetAlive(currentTarget) then
-                currentTarget = findRandomTarget()
-            end
-
-            if not currentTarget then
-                teleportToPosition(waitPositions[_G.CombatTargetType] or Vector3.new())
-                task.wait(0.3)
-            else
-                isInCombat = true
-                if isStunned() or isRagdolled() then
-                    shouldEscape = true
-                    escapeToHeight(currentTarget)
+            -- Check for chest first (priority)
+            chestToLoot = checkForChestToLoot()
+            
+            if chestToLoot then
+                -- Finish current target first, then loot chest
+                if currentTarget and isTargetAlive(currentTarget) then
+                    -- Continue fighting current target
+                    isInCombat = true
+                    if isStunned() or isRagdolled() then
+                        shouldEscape = true
+                        escapeToHeight(currentTarget)
+                    else
+                        shouldEscape = false
+                        teleportBehindTarget(currentTarget)
+                    end
+                    
+                    -- Use skills
+                    if tick() - lastSkillUse > 0.1 and #combatSettings.selectedSkills > 0 then
+                        local skill = combatSettings.selectedSkills[combatSettings.currentSkillIndex]
+                        useSkill(skill)
+                        combatSettings.currentSkillIndex = combatSettings.currentSkillIndex + 1
+                        if combatSettings.currentSkillIndex > #combatSettings.selectedSkills then
+                            combatSettings.currentSkillIndex = 1
+                        end
+                    end
+                    
+                    -- Auto attack
+                    spawn(function()
+                        while not hasCooldown("MOUSEBUTTON1")
+                            and _G.CombatEnabled
+                            and isInCombat
+                            and not shouldEscape
+                            and isTargetAlive(currentTarget)
+                            and not _G.CrateCollecting
+                            and not _G.ItemAutoSaving do
+                            useSkill("MOUSEBUTTON1")
+                            task.wait(0.05)
+                        end
+                    end)
                 else
-                    shouldEscape = false
-                    teleportBehindTarget(currentTarget)
+                    -- Target dead, go loot chest
+                    currentTarget = nil
+                    isInCombat = false
+                end
+            else
+                -- Normal combat logic
+                if not currentTarget or not isTargetAlive(currentTarget) then
+                    currentTarget = findRandomTarget()
                 end
 
-                if tick() - lastSkillUse > 0.1 and #combatSettings.selectedSkills > 0 then
-                    local skill = combatSettings.selectedSkills[combatSettings.currentSkillIndex]
-                    useSkill(skill)
-                    combatSettings.currentSkillIndex = combatSettings.currentSkillIndex + 1
-                    if combatSettings.currentSkillIndex > #combatSettings.selectedSkills then
-                        combatSettings.currentSkillIndex = 1
+                if not currentTarget then
+                    teleportToPosition(waitPositions[_G.CombatTargetType] or Vector3.new())
+                    task.wait(0.3)
+                else
+                    isInCombat = true
+                    if isStunned() or isRagdolled() then
+                        shouldEscape = true
+                        escapeToHeight(currentTarget)
+                    else
+                        shouldEscape = false
+                        teleportBehindTarget(currentTarget)
                     end
-                end
 
-                spawn(function()
-                    while not hasCooldown("MOUSEBUTTON1")
-                        and _G.CombatEnabled
-                        and isInCombat
-                        and not shouldEscape
-                        and isTargetAlive(currentTarget)
-                        and not _G.CrateCollecting
-                        and not _G.ItemAutoSaving do
-                        useSkill("MOUSEBUTTON1")
-                        task.wait(0.05)
+                    if tick() - lastSkillUse > 0.1 and #combatSettings.selectedSkills > 0 then
+                        local skill = combatSettings.selectedSkills[combatSettings.currentSkillIndex]
+                        useSkill(skill)
+                        combatSettings.currentSkillIndex = combatSettings.currentSkillIndex + 1
+                        if combatSettings.currentSkillIndex > #combatSettings.selectedSkills then
+                            combatSettings.currentSkillIndex = 1
+                        end
                     end
-                end)
+
+                    spawn(function()
+                        while not hasCooldown("MOUSEBUTTON1")
+                            and _G.CombatEnabled
+                            and isInCombat
+                            and not shouldEscape
+                            and isTargetAlive(currentTarget)
+                            and not _G.CrateCollecting
+                            and not _G.ItemAutoSaving do
+                            useSkill("MOUSEBUTTON1")
+                            task.wait(0.05)
+                        end
+                    end)
+                end
             end
             task.wait(0.15)
         end
     end
 end)
-
-_G.ResetCombatTarget = function() currentTarget = nil end
 
 Players.LocalPlayer.CharacterAdded:Connect(function(character)
     character:WaitForChild("HumanoidRootPart")
