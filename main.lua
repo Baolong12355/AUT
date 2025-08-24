@@ -8,9 +8,6 @@ local LocalPlayer = Players.LocalPlayer
 
 -- GitHub repository URLs
 local REPO_BASE = "https://raw.githubusercontent.com/Baolong12355/AUT/main/"
-local ITEM_LIST_URL = "https://raw.githubusercontent.com/Baolong12355/AUT/refs/heads/main/item.txt"
-
--- Scripts URLs
 local SCRIPTS = {
     autosave = REPO_BASE .. "autosave.lua",
     sell = REPO_BASE .. "sell.lua",
@@ -27,41 +24,22 @@ local SCRIPTS = {
 }
 
 -- Global variables initialization
-_G.AvailableItems = {}
-_G.LoadedScripts = {}
+_G.AvailableItems = _G.AvailableItems or {} -- Được nạp sẵn từ autosave.lua và sell.lua
+_G.LoadedScripts = _G.LoadedScripts or {}
 
 -- Default values
-_G.AutoSaveSelectedItems = {} -- THAY ĐỔI: items được chọn để save
-_G.AutoSellExcludeList = {} -- THAY ĐỔI: items được chọn để KHÔNG bán
-_G.CombatSelectedSkills = {"B"} -- Default combat skills
-
--- Load item list from GitHub
-local function loadItemList()
-    local success, result = pcall(function()
-        return game:HttpGet(ITEM_LIST_URL)
-    end)
-    
-    if success then
-        _G.AvailableItems = {}
-        for line in result:gmatch("[^\r\n]+") do
-            local trimmed = line:gsub("^%s+", ""):gsub("%s+$", "")
-            if trimmed ~= "" then
-                table.insert(_G.AvailableItems, trimmed)
-            end
-        end
-        return true
-    end
-    return false
-end
+_G.AutoSaveSelectedItems = _G.AutoSaveSelectedItems or {}
+_G.AutoSellExcludeList = _G.AutoSellExcludeList or {}
+_G.CombatSelectedSkills = _G.CombatSelectedSkills or {"B"}
 
 -- Load script from GitHub
 local function loadScript(name, url)
     if _G.LoadedScripts[name] then return true end
-    
+
     local success, result = pcall(function()
         return loadstring(game:HttpGet(url))()
     end)
-    
+
     if success then
         _G.LoadedScripts[name] = true
         return true
@@ -93,27 +71,6 @@ local SettingsTab = Window:CreateTab("Cài Đặt", "settings")
 
 -- === MAIN TAB ===
 MainTab:CreateSection("Tải Script")
-
-local LoadItemsButton = MainTab:CreateButton({
-    Name = "Tải Danh Sách Item",
-    Callback = function()
-        if loadItemList() then
-            Rayfield:Notify({
-                Title = "Thành công",
-                Content = "Đã tải " .. #_G.AvailableItems .. " items",
-                Duration = 3,
-                Image = "check"
-            })
-        else
-            Rayfield:Notify({
-                Title = "Lỗi",
-                Content = "Không thể tải danh sách item",
-                Duration = 3,
-                Image = "x"
-            })
-        end
-    end
-})
 
 local LoadAllButton = MainTab:CreateButton({
     Name = "Tải Tất Cả Script",
@@ -147,7 +104,6 @@ local CombatToggle = CombatTab:CreateToggle({
         if Value and not _G.LoadedScripts.combat then
             loadScript("combat", SCRIPTS.combat)
         end
-        -- THAY ĐỔI: Reset target khi tắt/bật combat
         if _G.ResetCombatTarget then
             _G.ResetCombatTarget()
         end
@@ -161,7 +117,6 @@ local CombatTypeDropdown = CombatTab:CreateDropdown({
     Flag = "CombatType",
     Callback = function(Options)
         _G.CombatTargetType = Options[1]
-        -- THAY ĐỔI: Reset target khi đổi loại
         if _G.ResetCombatTarget then
             _G.ResetCombatTarget()
         end
@@ -181,7 +136,6 @@ local EscapeHeightSlider = CombatTab:CreateSlider({
 
 CombatTab:CreateSection("Combat Skills")
 
--- Skill selection cho combat
 local availableSkills = {
     "B", "Q", "E", "R", "T", "Y", "U", "F", "G", "H", "Z", "X", "C", "V",
     "B+", "Q+", "E+", "R+", "T+", "Y+", "U+", "F+", "G+", "H+", "Z+", "X+", "C+", "V+",
@@ -228,11 +182,11 @@ local AutoSaveToggle = ItemTab:CreateToggle({
     end
 })
 
--- THAY ĐỔI: Dropdown để chọn items cần save
+-- THAY ĐỔI: Dropdown để chọn items cần save, lấy từ _G.AvailableItems
 local AutoSaveItemsDropdown = ItemTab:CreateDropdown({
     Name = "Chọn Items Cần Save",
     Options = _G.AvailableItems,
-    CurrentOption = {},
+    CurrentOption = _G.AutoSaveSelectedItems,
     MultipleOptions = true,
     Flag = "AutoSaveItems",
     Callback = function(Options)
@@ -266,11 +220,10 @@ local AutoSellToggle = ItemTab:CreateToggle({
     end
 })
 
--- THAY ĐỔI: Dropdown để chọn items KHÔNG bán
 local AutoSellExcludeDropdown = ItemTab:CreateDropdown({
     Name = "Chọn Items KHÔNG Bán",
     Options = _G.AvailableItems,
-    CurrentOption = {},
+    CurrentOption = _G.AutoSellExcludeList,
     MultipleOptions = true,
     Flag = "AutoSellExclude",
     Callback = function(Options)
@@ -575,29 +528,6 @@ local ReloadAllButton = SettingsTab:CreateButton({
         })
     end
 })
-
--- THAY ĐỔI: Update item options khi load
-local function updateItemOptions()
-    if #_G.AvailableItems > 0 then
-        -- Update dropdown options
-        AutoSaveItemsDropdown:Set(_G.AvailableItems)
-        AutoSellExcludeDropdown:Set(_G.AvailableItems)
-    end
-end
-
--- Auto load item list khi khởi động
-spawn(function()
-    wait(2)
-    if loadItemList() then
-        updateItemOptions() -- THAY ĐỔI: update dropdown options
-        Rayfield:Notify({
-            Title = "Auto Load",
-            Content = "Đã tự động tải " .. #_G.AvailableItems .. " items",
-            Duration = 3,
-            Image = "download"
-        })
-    end
-end)
 
 Rayfield:Notify({
     Title = "AUT Hub Loaded",
