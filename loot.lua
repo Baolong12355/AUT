@@ -63,7 +63,7 @@ end
 
 spawn(function()
     while true do
-        task.wait(10)
+        task.wait(0.1)
         if _G.LootEnabled and not _G.LootCollecting then
             for _, chest in ipairs(workspace:GetDescendants()) do
                 if isValidChest(chest) then
