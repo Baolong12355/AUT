@@ -68,7 +68,7 @@ spawn(function()
             for _, chest in ipairs(workspace:GetDescendants()) do
                 if isValidChest(chest) then
                     collectChest(chest)
-                    task.wait()
+                    task.wait(0.1)
                 end
             end
         end
