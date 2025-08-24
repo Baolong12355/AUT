@@ -1,8 +1,7 @@
--- Equipment Crate Auto Collector (Không dừng khi người chơi bị chiết, đồng bộ GUI)
+-- Equipment Crate Auto Collector (Tự động tắt combat khi phát hiện crate, chờ hồi sinh khi chiết)
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-
 local player = Players.LocalPlayer
 
 _G.CrateCollectorEnabled = _G.CrateCollectorEnabled or false
@@ -42,13 +41,19 @@ local function checkAndCollectCrate()
             if proximityAttachment then
                 local interaction = proximityAttachment:FindFirstChild("Interaction")
                 if interaction and interaction.Enabled then
+                    -- Đánh dấu đang nhặt crate, TẮT COMBAT nếu đang bật
                     _G.CrateCollecting = true
+                    if _G.CombatEnabled then
+                        _G.CombatEnabled = false
+                        if _G.ResetCombatTarget then
+                            _G.ResetCombatTarget()
+                        end
+                    end
 
                     teleportTo(crate.Position)
+                    -- Chờ hồi sinh nếu bị chiết
                     while interaction.Enabled do
-                        fireproximityprompt(interaction)
-                        task.wait(0.1)
-                        -- Nếu character bị chiết, chờ hồi sinh rồi tiếp tục
+                        -- Nếu bị chiết thì chờ hồi sinh rồi tiếp tục
                         if not player.Character or not player.Character:FindFirstChild("HumanoidRootPart") then
                             repeat
                                 player.CharacterAdded:Wait()
@@ -56,9 +61,11 @@ local function checkAndCollectCrate()
                             until player.Character and player.Character:FindFirstChild("HumanoidRootPart")
                             teleportTo(crate.Position)
                         end
+                        fireproximityprompt(interaction)
+                        task.wait(0.1)
                     end
 
-                    -- Gọi remote
+                    -- Gọi remote nộp crate
                     local args = {[1] = "TurnInCrate"}
                     ReplicatedStorage:WaitForChild("ReplicatedModules")
                         :WaitForChild("KnitPackage")
