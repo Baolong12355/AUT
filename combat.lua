@@ -269,7 +269,7 @@ spawn(function()
                     isInCombat = true
                     -- Teleport handled by heartbeat
                     -- Use skills
-                    if tick() - lastSkillUse > 0.1 and #combatSettings.selectedSkills > 0 then
+                    if tick() - lastSkillUse > 0.01 and #combatSettings.selectedSkills > 0 then
                         local skill = combatSettings.selectedSkills[combatSettings.currentSkillIndex]
                         useSkill(skill)
                         combatSettings.currentSkillIndex = combatSettings.currentSkillIndex + 1
@@ -302,7 +302,7 @@ spawn(function()
                 else
                     isInCombat = true
                     -- Teleport handled by heartbeat
-                    if tick() - lastSkillUse > 0.1 and #combatSettings.selectedSkills > 0 then
+                    if tick() - lastSkillUse > 0.01 and #combatSettings.selectedSkills > 0 then
                         local skill = combatSettings.selectedSkills[combatSettings.currentSkillIndex]
                         useSkill(skill)
                         combatSettings.currentSkillIndex = combatSettings.currentSkillIndex + 1
