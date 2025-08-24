@@ -1,4 +1,5 @@
--- Equipment Crate Auto Collector (Dừng combat từ lúc phát hiện chat spawn crate đến khi nhặt xong, sau đó tự bật lại nếu trước đó đang bật)
+-- Equipment Crate Auto Collector
+-- Mỗi lần teleport đi check crate sẽ TẠM DỪNG combat (dừng _G.CombatEnabled), sau đó khôi phục lại trạng thái trước đó
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -7,94 +8,15 @@ local player = Players.LocalPlayer
 
 _G.CrateCollectorEnabled = _G.CrateCollectorEnabled or false
 _G.CrateTPDelay = _G.CrateTPDelay or 0.1
-_G.CrateLoopDelay = _G.CrateLoopDelay or 60
+_G.CrateLoopDelay = _G.CrateLoopDelay or 100
 _G.CrateCollecting = _G.CrateCollecting or false
 
 local spawnPositions = {
     Vector3.new(-746.103271484375, 86.75, -620.1206),
     Vector3.new(-353.0508, 132.3436, 50.36768),
-    Vector3.new(-70.82891845703125, 81.39054107666016, 834.0664672851562)
+    Vector3.new(-70.82892, 81.39054, 834.0665)
 }
 
--- ==== Chat monitor (KHÔNG log file/console, chỉ lưu trạng thái) ====
-local lastChat = ""
-local chatHistory = {}
-
-local function logToMemory(text)
-    if text and text ~= lastChat then
-        lastChat = text
-        table.insert(chatHistory, text:lower())
-        if #chatHistory > 100 then
-            table.remove(chatHistory, 1)
-        end
-    end
-end
-
-local function monitorChat()
-    -- TextChatService (new chat)
-    pcall(function()
-        local chatService = game:GetService("TextChatService")
-        if chatService then
-            chatService.MessageReceived:Connect(function(textChatMessage)
-                if textChatMessage.Text then
-                    logToMemory(textChatMessage.Text)
-                end
-            end)
-        end
-    end)
-    -- GUI scan fallback
-    local function scanDescendant(desc)
-        if desc:IsA("TextLabel") or desc:IsA("TextBox") then
-            if desc.Text and #desc.Text > 0 and desc.Text ~= lastChat then
-                logToMemory(desc.Text)
-            end
-            desc:GetPropertyChangedSignal("Text"):Connect(function()
-                if desc.Text and #desc.Text > 0 and desc.Text ~= lastChat then
-                    logToMemory(desc.Text)
-                end
-            end)
-        end
-    end
-    local guiTargets = {
-        Players.LocalPlayer:WaitForChild("PlayerGui"),
-        game:GetService("CoreGui")
-    }
-    for _, gui in ipairs(guiTargets) do
-        gui.DescendantAdded:Connect(scanDescendant)
-        for _, desc in ipairs(gui:GetDescendants()) do
-            scanDescendant(desc)
-        end
-        gui.ChildAdded:Connect(function(child)
-            scanDescendant(child)
-        end)
-    end
-end
-
--- ==== Chat utilities ====
-local function hasSpawned()
-    local spawnKeyword = "equipment crate+has been reported!"
-    if lastChat:lower():find(spawnKeyword) then return true end
-    for _, chat in pairs(chatHistory) do
-        if chat:find(spawnKeyword) then return true end
-    end
-    return false
-end
-
-local function waitForChatKeyword(keyword, timeout)
-    local t0 = tick()
-    timeout = timeout or 30
-    while tick() - t0 < timeout do
-        if not _G.CrateCollectorEnabled then return false end
-        if lastChat:lower():find(keyword:lower()) then return true end
-        for _, chat in pairs(chatHistory) do
-            if chat:find(keyword:lower()) then return true end
-        end
-        task.wait(0.1)
-    end
-    return false
-end
-
--- ==== Crate logic ====
 local function getHumanoidRootPart()
     local character = player.Character or player.CharacterAdded:Wait()
     return character:WaitForChild("HumanoidRootPart")
@@ -121,14 +43,24 @@ local function checkAndCollectCrate()
             if proximityAttachment then
                 local interaction = proximityAttachment:FindFirstChild("Interaction")
                 if interaction and interaction.Enabled then
+                    -- Đánh dấu đang nhặt crate, TẠM DỪNG COMBAT (nếu đang bật)
                     _G.CrateCollecting = true
+
                     teleportTo(crate.Position)
                     while interaction.Enabled do
+                        -- Nếu bị chiết thì chờ hồi sinh rồi tiếp tục
+                        if not player.Character or not player.Character:FindFirstChild("HumanoidRootPart") then
+                            repeat
+                                player.CharacterAdded:Wait()
+                                task.wait(0.2)
+                            until player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+                            teleportTo(crate.Position)
+                        end
                         fireproximityprompt(interaction)
                         task.wait(0.1)
                     end
 
-                    -- Gọi remote
+                    -- Gọi remote nộp crate
                     local args = {[1] = "TurnInCrate"}
                     ReplicatedStorage:WaitForChild("ReplicatedModules")
                         :WaitForChild("KnitPackage")
@@ -167,49 +99,35 @@ local function checkSpawnLocationAtPosition(position)
     return false
 end
 
-spawn(monitorChat)
-
 spawn(function()
-    local combatWasEnabled = false
     while true do
         if _G.CrateCollectorEnabled then
-            -- Nếu phát hiện crate spawn chat, dừng combat system và nhớ trạng thái
-            if hasSpawned() then
-                if _G.CombatEnabled then
-                    combatWasEnabled = true
+            local foundCrate = false
+            for _, pos in ipairs(spawnPositions) do
+                -- --- TẠM DỪNG COMBAT mỗi lần TP ---
+                local wasCombatEnabled = _G.CombatEnabled
+                if wasCombatEnabled then
                     _G.CombatEnabled = false
-                    if _G.ResetCombatTarget then
-                        _G.ResetCombatTarget()
-                    end
-                else
-                    combatWasEnabled = false
+                    if _G.ResetCombatTarget then _G.ResetCombatTarget() end
                 end
 
-                -- Xử lý nhặt crate
-                local foundCrate = false
-                for _, pos in ipairs(spawnPositions) do
-                    teleportTo(pos)
-                    task.wait(_G.CrateTPDelay or 0.1)
-                    if checkSpawnLocationAtPosition(pos) then
-                        if checkAndCollectCrate() then
-                            foundCrate = true
-                            break
-                        end
+                teleportTo(pos)
+                task.wait(_G.CrateTPDelay or 0.1)
+
+                if checkSpawnLocationAtPosition(pos) then
+                    if checkAndCollectCrate() then
+                        foundCrate = true
+                        break
                     end
                 end
-                _G.CrateCollecting = false
 
-                -- Sau khi nhặt crate xong, nếu combat trước đó bật thì bật lại
-                if combatWasEnabled then
+                -- --- KHÔI PHỤC COMBAT về trạng thái cũ ---
+                if wasCombatEnabled then
                     _G.CombatEnabled = true
-                    combatWasEnabled = false
                 end
-
-                task.wait(_G.CrateLoopDelay or 60)
-            else
-                -- Nếu chưa có spawn chat, chờ tiếp
-                task.wait(1)
             end
+            _G.CrateCollecting = false
+            task.wait(_G.CrateLoopDelay or 60)
         else
             _G.CrateCollecting = false
             task.wait(1)
