@@ -1,4 +1,4 @@
--- Auto Loot Script - Sửa: Nếu đang nhặt chest mà bị chiết thì ĐỢI hồi sinh rồi tiếp tục nhặt
+-- Auto Loot Script - Tối ưu: chỉ check trực tiếp các chest BasePart nằm ngoài Folder trong workspace
 
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
@@ -42,8 +42,8 @@ local function collectChest(chest)
     local targetPos = chest.Position + Vector3.new(0, 4, 0)
 
     while prompt:IsDescendantOf(game) and _G.LootEnabled do
+        -- Nếu bị chiết thì đợi hồi sinh rồi tiếp tục
         local root
-        -- Nếu bị chiết thì đợi hồi sinh
         while true do
             local char = LocalPlayer.Character
             if char and char:FindFirstChild("HumanoidRootPart") then
@@ -61,11 +61,25 @@ local function collectChest(chest)
     _G.LootCollecting = false
 end
 
+-- Tối ưu: chỉ duyệt các BasePart nằm trực tiếp trong workspace (không phải con của Folder nào)
+local function getDirectChests()
+    local chests = {}
+    for _, v in ipairs(workspace:GetChildren()) do
+        if v:IsA("BasePart") and not v.Parent:IsA("Folder") then
+            -- Lưu ý: v.Parent luôn là workspace, nên chỉ cần workspace:GetChildren()
+            if v.Name:lower():find("chest") then
+                table.insert(chests, v)
+            end
+        end
+    end
+    return chests
+end
+
 spawn(function()
     while true do
         task.wait(0.1)
         if _G.LootEnabled and not _G.LootCollecting then
-            for _, chest in ipairs(workspace:GetDescendants()) do
+            for _, chest in ipairs(getDirectChests()) do
                 if isValidChest(chest) then
                     collectChest(chest)
                     task.wait(0.1)
@@ -78,7 +92,7 @@ end)
 _G.TriggerLootCollection = function()
     if not _G.LootEnabled or _G.LootCollecting then return false end
     local chestsFound = false
-    for _, chest in ipairs(workspace:GetDescendants()) do
+    for _, chest in ipairs(getDirectChests()) do
         if isValidChest(chest) then
             chestsFound = true
             collectChest(chest)
