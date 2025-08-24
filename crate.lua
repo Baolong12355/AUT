@@ -1,8 +1,7 @@
--- Equipment Crate Auto Collector (Bật/tắt, dừng combat khi thực sự nhặt crate và BẬT LẠI combat sau khi nhặt xong)
+-- Equipment Crate Auto Collector (liên tục TP và ấn prompt cho đến khi lấy xong, đồng bộ combat system)
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-
 local player = Players.LocalPlayer
 
 _G.CrateCollectorEnabled = _G.CrateCollectorEnabled or false
@@ -28,13 +27,11 @@ local function teleportTo(position)
     end
 end
 
-local function checkAndCollectCrate(combatWasEnabled)
+local function findAvailableCrate()
     local itemSpawns = workspace:FindFirstChild("ItemSpawns")
-    if not itemSpawns then return false end
-
+    if not itemSpawns then return nil end
     local labCrate = itemSpawns:FindFirstChild("LabCrate")
-    if not labCrate then return false end
-
+    if not labCrate then return nil end
     for _, crateSpawn in pairs(labCrate:GetChildren()) do
         local crate = crateSpawn:FindFirstChild("Crate")
         if crate then
@@ -42,52 +39,19 @@ local function checkAndCollectCrate(combatWasEnabled)
             if proximityAttachment then
                 local interaction = proximityAttachment:FindFirstChild("Interaction")
                 if interaction and interaction.Enabled then
-                    -- Đánh dấu đang nhặt crate, TẮT COMBAT nếu đang bật
-                    _G.CrateCollecting = true
-                    if _G.CombatEnabled then
-                        _G.CombatEnabled = false
-                        if _G.ResetCombatTarget then _G.ResetCombatTarget() end
-                    end
-
-                    teleportTo(crate.Position)
-                    while interaction.Enabled do
-                        fireproximityprompt(interaction)
-                        task.wait(0.1)
-                    end
-
-                    -- Gọi remote
-                    local args = {[1] = "TurnInCrate"}
-                    ReplicatedStorage:WaitForChild("ReplicatedModules")
-                        :WaitForChild("KnitPackage")
-                        :WaitForChild("Knit")
-                        :WaitForChild("Services")
-                        :WaitForChild("DialogueService")
-                        :WaitForChild("RF")
-                        :WaitForChild("CheckRequirement")
-                        :InvokeServer(unpack(args))
-
-                    _G.CrateCollecting = false
-
-                    -- BẬT LẠI COMBAT nếu trước đó bật
-                    if combatWasEnabled then
-                        _G.CombatEnabled = true
-                    end
-
-                    return true
+                    return crate, interaction
                 end
             end
         end
     end
-    return false
+    return nil
 end
 
 local function checkSpawnLocationAtPosition(position)
     local itemSpawns = workspace:FindFirstChild("ItemSpawns")
     if not itemSpawns then return false end
-
     local labCrate = itemSpawns:FindFirstChild("LabCrate")
     if not labCrate then return false end
-
     for _, spawnLocation in pairs(labCrate:GetChildren()) do
         if spawnLocation.Name == "SpawnLocation" and spawnLocation.Position then
             local distance = (spawnLocation.Position - position).Magnitude
@@ -99,26 +63,66 @@ local function checkSpawnLocationAtPosition(position)
     return false
 end
 
+local function collectCrate(crate, interaction)
+    _G.CrateCollecting = true
+    local combatWasEnabled = _G.CombatEnabled
+    if combatWasEnabled then
+        _G.CombatEnabled = false
+        if _G.ResetCombatTarget then _G.ResetCombatTarget() end
+    end
+
+    -- Liên tục tp và ấn interaction cho đến khi interaction.Enabled == false
+    while interaction and interaction.Parent and interaction.Enabled do
+        -- Nếu bị chiết thì chờ hồi sinh rồi tiếp tục
+        if not player.Character or not player.Character:FindFirstChild("HumanoidRootPart") then
+            repeat
+                player.CharacterAdded:Wait()
+                task.wait(0.2)
+            until player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+            teleportTo(crate.Position)
+        end
+        teleportTo(crate.Position)
+        fireproximityprompt(interaction)
+        task.wait(0.1)
+    end
+
+    -- Gọi remote nộp crate
+    local args = {[1] = "TurnInCrate"}
+    ReplicatedStorage:WaitForChild("ReplicatedModules")
+        :WaitForChild("KnitPackage")
+        :WaitForChild("Knit")
+        :WaitForChild("Services")
+        :WaitForChild("DialogueService")
+        :WaitForChild("RF")
+        :WaitForChild("CheckRequirement")
+        :InvokeServer(unpack(args))
+
+    _G.CrateCollecting = false
+    if combatWasEnabled then
+        _G.CombatEnabled = true
+    end
+end
+
 spawn(function()
     while true do
         if _G.CrateCollectorEnabled then
-            local foundCrate = false
-            -- Lưu trạng thái combat trước khi vòng check
             local combatWasEnabled = _G.CombatEnabled
-
+            local foundCrate = false
             for _, pos in ipairs(spawnPositions) do
                 teleportTo(pos)
                 task.wait(_G.CrateTPDelay or 0.1)
 
                 if checkSpawnLocationAtPosition(pos) then
-                    if checkAndCollectCrate(combatWasEnabled) then
+                    local crate, interaction = findAvailableCrate()
+                    if crate and interaction then
+                        collectCrate(crate, interaction)
                         foundCrate = true
                         break
                     end
                 end
             end
-            _G.CrateCollecting = false -- reset nếu không có crate nào
-            -- Nếu vòng này không nhặt crate, cũng khôi phục lại combat nếu nó đang bật trước đó
+            _G.CrateCollecting = false
+            -- Nếu không tìm thấy crate nhưng combat bật trước đó, bật lại combat
             if combatWasEnabled then
                 _G.CombatEnabled = true
             end
