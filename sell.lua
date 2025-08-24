@@ -1,4 +1,4 @@
--- Auto Sell Script - Fixed version with item exclude list
+-- Auto Sell Script - Fixed version with item exclude list, bán hết nếu list rỗng
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -53,6 +53,10 @@ _G.AvailableItems = _G.AvailableItems or {
 }
 
 local function shouldSell(itemName)
+    if #_G.AutoSellExcludeList == 0 then
+        -- Nếu không có item nào được bỏ qua: bán hết
+        return true
+    end
     for _, name in ipairs(_G.AutoSellExcludeList) do
         if name == itemName then return false end
     end
@@ -107,8 +111,3 @@ spawn(function()
         end
     end
 end)
-
--- Initialize with all items excluded by default (so nothing gets sold accidentally)
-if #_G.AutoSellExcludeList == 0 then
-    _G.AutoSellExcludeList = table.clone(_G.AvailableItems)
-end
