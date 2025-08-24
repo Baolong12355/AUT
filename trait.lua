@@ -1,37 +1,22 @@
--- Auto Trait Selector: pick ưu tiên, lưu 5 trait đã discard gần nhất
-
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Knit = require(ReplicatedStorage.ReplicatedModules.KnitPackage.Knit)
 local TraitService = Knit.GetService("TraitService")
 
 _G.TraitAutoPickEnabled = _G.TraitAutoPickEnabled or false
-
-_G.TraitList_Legendary = _G.TraitList_Legendary or {
-    "Prime","Angelic","Solar","Cursed","Vampiric","Gluttonous","Voided",
-    "Gambler","Overflowing","Deferred","True","Cultivation","Economic"
-}
-_G.TraitList_LegendaryHexed = _G.TraitList_LegendaryHexed or {
-    "Overconfident Prime","Fallen Angelic","Icarus Solar","Undying Cursed","Ancient Vampiric",
-    "Festering Gluttonous","Abyssal Voided","Idle Death Gambler","Torrential Overflowing",
-    "Fractured Deferred","Vitriolic True","Soul Reaping Cultivation","Greedy Economic"
-}
-_G.TraitList_Mythic = _G.TraitList_Mythic or {
-    "Godly","Temporal","RCT","Spiritual","Ryoiki","Adaptation"
-}
-_G.TraitList_MythicHexed = _G.TraitList_MythicHexed or {
-    "Egotistic Godly","FTL Temporal","Automatic RCT","Mastered Spiritual","Overcharged Ryoiki","Unbound Adaptation"
-}
-
+_G.TraitList_Legendary = _G.TraitList_Legendary or {}
+_G.TraitList_LegendaryHexed = _G.TraitList_LegendaryHexed or {}
+_G.TraitList_Mythic = _G.TraitList_Mythic or {}
+_G.TraitList_MythicHexed = _G.TraitList_MythicHexed or {}
 _G.TraitDiscardHistory = _G.TraitDiscardHistory or {}
 
 local DiscardTraits = ReplicatedStorage.ReplicatedModules.KnitPackage.Knit.Services.TraitService.RF.DiscardTraits
 local PickTrait = ReplicatedStorage.ReplicatedModules.KnitPackage.Knit.Services.TraitService.RF.PickTrait
 
 local function isPreferredTrait(traitName)
-    for _, v in ipairs(_G.TraitList_Legendary or {}) do if v == traitName then return true end end
-    for _, v in ipairs(_G.TraitList_LegendaryHexed or {}) do if v == traitName then return true end end
-    for _, v in ipairs(_G.TraitList_Mythic or {}) do if v == traitName then return true end end
-    for _, v in ipairs(_G.TraitList_MythicHexed or {}) do if v == traitName then return true end end
+    for _, v in ipairs(_G.TraitList_Legendary) do if v == traitName then return true end end
+    for _, v in ipairs(_G.TraitList_LegendaryHexed) do if v == traitName then return true end end
+    for _, v in ipairs(_G.TraitList_Mythic) do if v == traitName then return true end end
+    for _, v in ipairs(_G.TraitList_MythicHexed) do if v == traitName then return true end end
     return false
 end
 
