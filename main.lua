@@ -1,4 +1,4 @@
--- AUT Main Loader - Quản lý tất cả script với Rayfield GUI
+-- AUT Main Loader - Quản lý tất cả script với Rayfield GUI (Đã fix đồng bộ danh sách item, auto sell mặc định không rỗng, ...)
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
 -- Services
@@ -8,6 +8,9 @@ local LocalPlayer = Players.LocalPlayer
 
 -- GitHub repository URLs
 local REPO_BASE = "https://raw.githubusercontent.com/Baolong12355/AUT/main/"
+local ITEM_LIST_URL = "https://raw.githubusercontent.com/Baolong12355/AUT/refs/heads/main/item.txt"
+
+-- Scripts URLs
 local SCRIPTS = {
     autosave = REPO_BASE .. "autosave.lua",
     sell = REPO_BASE .. "sell.lua",
@@ -24,7 +27,7 @@ local SCRIPTS = {
 }
 
 -- Global variables initialization
-_G.AvailableItems = _G.AvailableItems or {} -- Được nạp sẵn từ autosave.lua và sell.lua
+_G.AvailableItems = _G.AvailableItems or {}
 _G.LoadedScripts = _G.LoadedScripts or {}
 
 -- Default values
@@ -32,14 +35,37 @@ _G.AutoSaveSelectedItems = _G.AutoSaveSelectedItems or {}
 _G.AutoSellExcludeList = _G.AutoSellExcludeList or {}
 _G.CombatSelectedSkills = _G.CombatSelectedSkills or {"B"}
 
+-- Load item list from GitHub
+local function loadItemList()
+    local success, result = pcall(function()
+        return game:HttpGet(ITEM_LIST_URL)
+    end)
+    if success then
+        _G.AvailableItems = {}
+        for line in result:gmatch("[^\r\n]+") do
+            local trimmed = line:gsub("^%s+", ""):gsub("%s+$", "")
+            if trimmed ~= "" then
+                table.insert(_G.AvailableItems, trimmed)
+            end
+        end
+        -- Nếu AutoSave hoặc AutoSell list rỗng, tự động fill ALL (và cập nhật dropdown)
+        if #_G.AutoSaveSelectedItems == 0 then
+            _G.AutoSaveSelectedItems = table.clone(_G.AvailableItems)
+        end
+        if #_G.AutoSellExcludeList == 0 then
+            _G.AutoSellExcludeList = table.clone(_G.AvailableItems)
+        end
+        return true
+    end
+    return false
+end
+
 -- Load script from GitHub
 local function loadScript(name, url)
     if _G.LoadedScripts[name] then return true end
-
     local success, result = pcall(function()
         return loadstring(game:HttpGet(url))()
     end)
-
     if success then
         _G.LoadedScripts[name] = true
         return true
@@ -71,6 +97,32 @@ local SettingsTab = Window:CreateTab("Cài Đặt", "settings")
 
 -- === MAIN TAB ===
 MainTab:CreateSection("Tải Script")
+
+local LoadItemsButton = MainTab:CreateButton({
+    Name = "Tải Danh Sách Item",
+    Callback = function()
+        if loadItemList() then
+            -- Cập nhật dropdown nếu có
+            if AutoSaveItemsDropdown and AutoSaveExcludeDropdown then
+                AutoSaveItemsDropdown:Set(_G.AvailableItems)
+                AutoSellExcludeDropdown:Set(_G.AvailableItems)
+            end
+            Rayfield:Notify({
+                Title = "Thành công",
+                Content = "Đã tải " .. #_G.AvailableItems .. " items",
+                Duration = 3,
+                Image = "check"
+            })
+        else
+            Rayfield:Notify({
+                Title = "Lỗi",
+                Content = "Không thể tải danh sách item",
+                Duration = 3,
+                Image = "x"
+            })
+        end
+    end
+})
 
 local LoadAllButton = MainTab:CreateButton({
     Name = "Tải Tất Cả Script",
@@ -145,7 +197,7 @@ local availableSkills = {
 local CombatSkillsDropdown = CombatTab:CreateDropdown({
     Name = "Chọn Skills Combat",
     Options = availableSkills,
-    CurrentOption = {"B"},
+    CurrentOption = _G.CombatSelectedSkills,
     MultipleOptions = true,
     Flag = "CombatSkills",
     Callback = function(Options)
@@ -182,8 +234,8 @@ local AutoSaveToggle = ItemTab:CreateToggle({
     end
 })
 
--- THAY ĐỔI: Dropdown để chọn items cần save, lấy từ _G.AvailableItems
-local AutoSaveItemsDropdown = ItemTab:CreateDropdown({
+-- Dropdown để chọn items cần save
+AutoSaveItemsDropdown = ItemTab:CreateDropdown({
     Name = "Chọn Items Cần Save",
     Options = _G.AvailableItems,
     CurrentOption = _G.AutoSaveSelectedItems,
@@ -191,6 +243,9 @@ local AutoSaveItemsDropdown = ItemTab:CreateDropdown({
     Flag = "AutoSaveItems",
     Callback = function(Options)
         _G.AutoSaveSelectedItems = Options
+        if #Options == 0 then
+            _G.AutoSaveSelectedItems = table.clone(_G.AvailableItems)
+        end
     end
 })
 
@@ -217,17 +272,26 @@ local AutoSellToggle = ItemTab:CreateToggle({
         if Value and not _G.LoadedScripts.sell then
             loadScript("sell", SCRIPTS.sell)
         end
+        -- Đảm bảo list không rỗng nếu user bật auto sell khi list rỗng
+        if #_G.AutoSellExcludeList == 0 then
+            _G.AutoSellExcludeList = table.clone(_G.AvailableItems)
+        end
     end
 })
 
-local AutoSellExcludeDropdown = ItemTab:CreateDropdown({
+-- Dropdown để chọn items KHÔNG bán
+AutoSellExcludeDropdown = ItemTab:CreateDropdown({
     Name = "Chọn Items KHÔNG Bán",
     Options = _G.AvailableItems,
     CurrentOption = _G.AutoSellExcludeList,
     MultipleOptions = true,
     Flag = "AutoSellExclude",
     Callback = function(Options)
-        _G.AutoSellExcludeList = Options
+        if #Options == 0 then
+            _G.AutoSellExcludeList = table.clone(_G.AvailableItems)
+        else
+            _G.AutoSellExcludeList = Options
+        end
     end
 })
 
@@ -354,7 +418,6 @@ local TraitToggle = TraitTab:CreateToggle({
     end
 })
 
--- Legendary Traits
 local LegendaryTraitsDropdown = TraitTab:CreateDropdown({
     Name = "Legendary Traits Ưu Tiên",
     Options = {"Prime", "Angelic", "Solar", "Cursed", "Vampiric", "Gluttonous", "Voided", "Gambler", "Overflowing", "Deferred", "True", "Cultivation", "Economic"},
@@ -366,7 +429,6 @@ local LegendaryTraitsDropdown = TraitTab:CreateDropdown({
     end
 })
 
--- Legendary Hexed Traits
 local LegendaryHexedTraitsDropdown = TraitTab:CreateDropdown({
     Name = "Legendary Hexed Traits",
     Options = {"Overconfident Prime", "Fallen Angelic", "Icarus Solar", "Undying Cursed", "Ancient Vampiric", "Festering Gluttonous", "Abyssal Voided", "Idle Death Gambler", "Torrential Overflowing", "Fractured Deferred", "Vitriolic True", "Soul Reaping Cultivation", "Greedy Economic"},
@@ -378,7 +440,6 @@ local LegendaryHexedTraitsDropdown = TraitTab:CreateDropdown({
     end
 })
 
--- Mythic Traits
 local MythicTraitsDropdown = TraitTab:CreateDropdown({
     Name = "Mythic Traits Ưu Tiên",
     Options = {"Godly", "Temporal", "RCT", "Spiritual", "Ryoiki", "Adaptation"},
@@ -390,7 +451,6 @@ local MythicTraitsDropdown = TraitTab:CreateDropdown({
     end
 })
 
--- Mythic Hexed Traits
 local MythicHexedTraitsDropdown = TraitTab:CreateDropdown({
     Name = "Mythic Hexed Traits",
     Options = {"Egotistic Godly", "FTL Temporal", "Automatic RCT", "Mastered Spiritual", "Overcharged Ryoiki", "Unbound Adaptation"},
@@ -528,6 +588,17 @@ local ReloadAllButton = SettingsTab:CreateButton({
         })
     end
 })
+
+-- Auto load item list khi khởi động
+spawn(function()
+    wait(2)
+    if loadItemList() then
+        if AutoSaveItemsDropdown and AutoSellExcludeDropdown then
+            AutoSaveItemsDropdown:Set(_G.AvailableItems)
+            AutoSellExcludeDropdown:Set(_G.AvailableItems)
+        end
+    end
+end)
 
 Rayfield:Notify({
     Title = "AUT Hub Loaded",
