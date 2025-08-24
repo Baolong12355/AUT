@@ -226,9 +226,9 @@ spawn(function()
         
         -- Pause combat for various reasons
         if _G.CrateCollecting or _G.ItemAutoSaving then
-            task.wait(0.05)
+            task.wait()
         elseif not _G.CombatEnabled then
-            task.wait(1)
+            task.wait()
         else
             -- Check for chest first (priority)
             chestToLoot = checkForChestToLoot()
@@ -282,7 +282,7 @@ spawn(function()
 
                 if not currentTarget then
                     teleportToPosition(waitPositions[_G.CombatTargetType] or Vector3.new())
-                    task.wait(0.3)
+                    task.wait()
                 else
                     isInCombat = true
                     if isStunned() or isRagdolled() then
@@ -316,7 +316,7 @@ spawn(function()
                     end)
                 end
             end
-            task.wait(0.15)
+            task.wait()
         end
     end
 end)
