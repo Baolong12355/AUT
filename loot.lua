@@ -1,8 +1,10 @@
+-- Auto Loot Script - Integrated with Combat System
+
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
-local UserId = LocalPlayer.UserId
 
 _G.LootEnabled = _G.LootEnabled or false
+_G.LootCollecting = _G.LootCollecting or false
 
 local function getRoot()
     local char = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
@@ -13,7 +15,7 @@ local function isWhitelisted(chest)
     local whitelist = chest:FindFirstChild("Whitelisted")
     if not whitelist or not whitelist:IsA("Folder") then return false end
     for _, v in ipairs(whitelist:GetChildren()) do
-        if tonumber(v.Name) == UserId then
+        if tonumber(v.Name) == LocalPlayer.UserId then
             return true
         end
     end
@@ -31,31 +33,53 @@ local function isValidChest(chest)
     return true
 end
 
-local function loopTPandOpen(chest)
+local function collectChest(chest)
     local prompt = chest:FindFirstChild("ProximityAttachment"):FindFirstChild("Interaction")
     if not prompt then return end
 
     local root = getRoot()
     local targetPos = chest.Position + Vector3.new(0, 4, 0)
+    
+    -- Set collecting state
+    _G.LootCollecting = true
 
     fireproximityprompt(prompt)
 
-    while prompt:IsDescendantOf(game) do
+    while prompt:IsDescendantOf(game) and _G.LootEnabled do
         root.CFrame = CFrame.new(targetPos)
-        task.wait()
+        task.wait(0.1)
     end
+    
+    -- Reset collecting state
+    _G.LootCollecting = false
 end
 
+-- Standalone loot function (for when combat is disabled)
 spawn(function()
     while true do
         task.wait(1)
-        if _G.LootEnabled then
+        -- Only run standalone loot if combat is disabled or loot is specifically enabled
+        if _G.LootEnabled and not _G.CombatEnabled and not _G.LootCollecting then
             for _, chest in ipairs(workspace:GetDescendants()) do
                 if isValidChest(chest) then
-                    loopTPandOpen(chest)
+                    collectChest(chest)
                     task.wait(0.1)
                 end
             end
         end
     end
 end)
+
+-- Manual trigger function for combat integration
+_G.TriggerLootCollection = function()
+    if not _G.LootEnabled or _G.LootCollecting then return false end
+    
+    local chestsFound = false
+    for _, chest in ipairs(workspace:GetDescendants()) do
+        if isValidChest(chest) then
+            chestsFound = true
+            collectChest(chest)
+        end
+    end
+    return chestsFound
+end
