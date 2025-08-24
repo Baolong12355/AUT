@@ -1,14 +1,35 @@
--- Auto Sell Script - Bật/tắt với delay được loader truyền vào
+-- Auto Sell Script - Load item list từ GitHub và cho phép chọn items bỏ qua
+
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local player = Players.LocalPlayer
 local backpack = player:WaitForChild("Backpack")
 
--- Biến điều khiển từ loader
+-- Global variables cho external control
 _G.AutoSellEnabled = _G.AutoSellEnabled or false
-_G.AutoSellDelay = _G.AutoSellDelay or 10 -- Delay giữa mỗi lần sell (giây)
-_G.AutoSellExcludeList = _G.AutoSellExcludeList or {} -- List item không sell
+_G.AutoSellDelay = _G.AutoSellDelay or 30
+_G.AutoSellExcludeList = _G.AutoSellExcludeList or {} -- Items được chọn để KHÔNG bán
+_G.AvailableItems = _G.AvailableItems or {} -- Danh sách items từ GitHub
+
+-- Load item list từ GitHub
+local function loadItemListFromGitHub()
+    local success, result = pcall(function()
+        return game:HttpGet("https://raw.githubusercontent.com/Baolong12355/AUT/refs/heads/main/item.txt")
+    end)
+    
+    if success then
+        _G.AvailableItems = {}
+        for line in result:gmatch("[^\r\n]+") do
+            local trimmed = line:gsub("^%s+", ""):gsub("%s+$", "")
+            if trimmed ~= "" then
+                table.insert(_G.AvailableItems, trimmed)
+            end
+        end
+        return true
+    end
+    return false
+end
 
 local function shouldSell(itemName)
     for _, name in ipairs(_G.AutoSellExcludeList) do
@@ -17,9 +38,7 @@ local function shouldSell(itemName)
     return true
 end
 
-local function sellAllItems()
-    if not _G.AutoSellEnabled then return end
-    
+function _G.SellAll()
     local itemsToSell = {}
     for _, tool in pairs(backpack:GetChildren()) do
         if tool:IsA("Tool") and shouldSell(tool.Name) then
@@ -30,7 +49,6 @@ local function sellAllItems()
             end
         end
     end
-    
     if #itemsToSell == 0 then return end
     
     local success = pcall(function()
@@ -57,17 +75,20 @@ local function sellAllItems()
     end
 end
 
--- Loop chính
+-- Auto sell loop
 spawn(function()
     while true do
         if _G.AutoSellEnabled then
-            sellAllItems()
-            task.wait(_G.AutoSellDelay or 10)
+            _G.SellAll()
+            task.wait(_G.AutoSellDelay)
         else
             task.wait(1)
         end
     end
 end)
 
--- Export function để loader có thể gọi thủ công
-_G.SellAll = sellAllItems
+-- Load item list khi khởi động
+spawn(function()
+    task.wait(1)
+    loadItemListFromGitHub()
+end)
