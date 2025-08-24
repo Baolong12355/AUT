@@ -1,4 +1,4 @@
--- Auto Sell Script - Fixed: Bán tất cả nếu exclude list rỗng, không tự gán exclude list mặc định
+-- Auto Sell Script - Không dừng khi chiết, luôn chờ hồi sinh để tiếp tục
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -6,19 +6,16 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local player = Players.LocalPlayer
 local backpack = player:WaitForChild("Backpack")
 
--- Global variables for external control
 _G.AutoSellEnabled = _G.AutoSellEnabled or false
 _G.AutoSellDelay = _G.AutoSellDelay or 30
-_G.AutoSellExcludeList = _G.AutoSellExcludeList or {} -- Items được chọn để KHÔNG bán
-
--- Item list from item.txt (dùng _G.AvailableItems do loader nạp)
+_G.AutoSellExcludeList = _G.AutoSellExcludeList or {}
 _G.AvailableItems = _G.AvailableItems or {}
 
+local function getCharacterOrWait()
+    return player.Character or player.CharacterAdded:Wait()
+end
+
 local function shouldSell(itemName)
-    -- Bán tất cả nếu exclude list rỗng
-    if #_G.AutoSellExcludeList == 0 then
-        return true
-    end
     for _, name in ipairs(_G.AutoSellExcludeList) do
         if name == itemName then return false end
     end
@@ -26,8 +23,12 @@ local function shouldSell(itemName)
 end
 
 function _G.SellAll()
+    -- Đợi character hồi sinh nếu bị chiết (đảm bảo Backpack tồn tại)
+    local char = getCharacterOrWait()
+    local bp = player:FindFirstChild("Backpack") or player:WaitForChild("Backpack")
+
     local itemsToSell = {}
-    for _, tool in pairs(backpack:GetChildren()) do
+    for _, tool in pairs(bp:GetChildren()) do
         if tool:IsA("Tool") and shouldSell(tool.Name) then
             local itemId = tool:GetAttribute("ItemId")
             local uuid = tool:GetAttribute("UUID")
@@ -62,7 +63,6 @@ function _G.SellAll()
     end
 end
 
--- Auto sell loop
 spawn(function()
     while true do
         if _G.AutoSellEnabled then
