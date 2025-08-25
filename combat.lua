@@ -119,21 +119,33 @@ end
 local function teleportBehindTarget(target)
     local character = localPlayer.Character
     if not character or not character:FindFirstChild("HumanoidRootPart") or not isValidTarget(target) then return end
+    local playerRoot = character.HumanoidRootPart
     local targetCFrame = target.HumanoidRootPart.CFrame
     local behindPos = targetCFrame * CFrame.new(0, 0, 5)
-    character.HumanoidRootPart.CFrame = behindPos
+    
+    -- Xoay player về phía target
+    local lookDirection = (target.HumanoidRootPart.Position - behindPos.Position).Unit
+    local newCFrame = CFrame.lookAt(behindPos.Position, behindPos.Position + lookDirection)
+    
+    character.HumanoidRootPart.CFrame = newCFrame
 end
 
 local function escapeToHeight(target)
     local character = localPlayer.Character
     if not character or not character:FindFirstChild("HumanoidRootPart") then return end
+    local playerRoot = character.HumanoidRootPart
     local escapePos
+    
     if isValidTarget(target) then
         escapePos = target.HumanoidRootPart.Position + Vector3.new(0, _G.CombatEscapeHeight, 0)
+        -- Xoay player về phía target khi escape
+        local lookDirection = (target.HumanoidRootPart.Position - escapePos).Unit
+        local newCFrame = CFrame.lookAt(escapePos, escapePos + lookDirection)
+        playerRoot.CFrame = newCFrame
     else
-        escapePos = character.HumanoidRootPart.Position + Vector3.new(0, _G.CombatEscapeHeight, 0)
+        escapePos = playerRoot.Position + Vector3.new(0, _G.CombatEscapeHeight, 0)
+        playerRoot.CFrame = CFrame.new(escapePos)
     end
-    character.HumanoidRootPart.CFrame = CFrame.new(escapePos)
 end
 
 local function useSkill(skillKey)
