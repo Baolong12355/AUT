@@ -1,6 +1,3 @@
--- Auto Combat Script với chest priority và reset target khi đổi settings
--- ĐÃ THÊM LẠI CHỨC NĂNG TELEPORT BẰNG HEARTBEAT (liên tục giữ vị trí hợp lý với target)
-
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -16,6 +13,7 @@ _G.CrateCollecting = _G.CrateCollecting or false
 _G.ItemAutoSaving = _G.ItemAutoSaving or false
 _G.SlayerQuestActive = _G.SlayerQuestActive or false
 _G.LootEnabled = _G.LootEnabled or false
+_G.LootCollecting = _G.LootCollecting or false
 
 local combatSettings = {
     selectedSkills = _G.CombatSelectedSkills,
@@ -185,10 +183,17 @@ end
 
 local function findRandomTarget()
     local validTargets = {}
+    
+    -- FIXED: Luôn kiểm tra chest trước, bất kể có boss slayer hay không
+    chestToLoot = checkForChestToLoot()
+    
+    -- Ưu tiên slayer boss nếu có
     if _G.SlayerQuestActive then
         local boss = getSlayerBossTarget()
         if boss then table.insert(validTargets, boss) end
     end
+    
+    -- Thêm target thường
     local targetPaths = targetLists[_G.CombatTargetType]
     for _, path in ipairs(targetPaths or {}) do
         local target = getTargetFromPath(path)
@@ -196,6 +201,7 @@ local function findRandomTarget()
             table.insert(validTargets, target)
         end
     end
+    
     if #validTargets > 0 then
         return validTargets[math.random(1, #validTargets)]
     end
@@ -215,11 +221,10 @@ local function startHeartbeatTeleport()
     end
     heartbeatTPConnection = RunService.Heartbeat:Connect(function()
         if not _G.CombatEnabled then return end
-        if _G.CrateCollecting or _G.ItemAutoSaving then return end
+        if _G.CrateCollecting or _G.ItemAutoSaving or _G.LootCollecting then return end
         if not localPlayer.Character or not localPlayer.Character:FindFirstChild("HumanoidRootPart") then return end
 
         -- Lấy target hiện tại
-        local target = currentTarget
         if chestToLoot then
             -- chest priority: giữ vị trí không dịch chuyển nếu đang combat
             if currentTarget and isTargetAlive(currentTarget) then
@@ -229,7 +234,7 @@ local function startHeartbeatTeleport()
                     teleportBehindTarget(currentTarget)
                 end
             else
-                -- Target chết, không teleport
+                -- Target chết hoặc không có target, không teleport
             end
         else
             if not currentTarget or not isTargetAlive(currentTarget) then
@@ -246,7 +251,7 @@ local function startHeartbeatTeleport()
     end)
 end
 
--- Combat loop với chest priority
+-- Combat loop với chest priority được đồng bộ
 spawn(function()
     startHeartbeatTeleport()
     while true do
@@ -258,71 +263,52 @@ spawn(function()
             combatSettings.lastTargetType = _G.CombatTargetType
         end
         combatSettings.selectedSkills = _G.CombatSelectedSkills or {"B"}
-        if _G.CrateCollecting or _G.ItemAutoSaving then
+        
+        if _G.CrateCollecting or _G.ItemAutoSaving or _G.LootCollecting then
             task.wait()
         elseif not _G.CombatEnabled then
             task.wait()
         else
-            chestToLoot = checkForChestToLoot()
-            if chestToLoot then
-                if currentTarget and isTargetAlive(currentTarget) then
-                    isInCombat = true
-                    -- Teleport handled by heartbeat
-                    -- Use skills
-                    if tick() - lastSkillUse > 0.01 and #combatSettings.selectedSkills > 0 then
-                        local skill = combatSettings.selectedSkills[combatSettings.currentSkillIndex]
-                        useSkill(skill)
-                        combatSettings.currentSkillIndex = combatSettings.currentSkillIndex + 1
-                        if combatSettings.currentSkillIndex > #combatSettings.selectedSkills then
-                            combatSettings.currentSkillIndex = 1
-                        end
-                    end
-                    spawn(function()
-                        while not hasCooldown("MOUSEBUTTON1")
-                            and _G.CombatEnabled
-                            and isInCombat
-                            and isTargetAlive(currentTarget)
-                            and not _G.CrateCollecting
-                            and not _G.ItemAutoSaving do
-                            useSkill("MOUSEBUTTON1")
-                            task.wait(0.05)
-                        end
-                    end)
-                else
-                    currentTarget = nil
-                    isInCombat = false
-                end
+            -- FIXED: Tìm target mới sẽ tự động kiểm tra chest
+            if not currentTarget or not isTargetAlive(currentTarget) then
+                currentTarget = findRandomTarget()
             else
-                if not currentTarget or not isTargetAlive(currentTarget) then
-                    currentTarget = findRandomTarget()
-                end
-                if not currentTarget then
-                    -- Teleport handled by heartbeat
-                    task.wait()
-                else
-                    isInCombat = true
-                    -- Teleport handled by heartbeat
-                    if tick() - lastSkillUse > 0.01 and #combatSettings.selectedSkills > 0 then
-                        local skill = combatSettings.selectedSkills[combatSettings.currentSkillIndex]
-                        useSkill(skill)
-                        combatSettings.currentSkillIndex = combatSettings.currentSkillIndex + 1
-                        if combatSettings.currentSkillIndex > #combatSettings.selectedSkills then
-                            combatSettings.currentSkillIndex = 1
-                        end
-                    end
-                    spawn(function()
-                        while not hasCooldown("MOUSEBUTTON1")
-                            and _G.CombatEnabled
-                            and isInCombat
-                            and isTargetAlive(currentTarget)
-                            and not _G.CrateCollecting
-                            and not _G.ItemAutoSaving do
-                            useSkill("MOUSEBUTTON1")
-                            task.wait(0.05)
-                        end
-                    end)
-                end
+                -- Vẫn kiểm tra chest ngay cả khi có target
+                chestToLoot = checkForChestToLoot()
             end
+            
+            if currentTarget and isTargetAlive(currentTarget) then
+                isInCombat = true
+                -- Teleport handled by heartbeat
+                
+                -- Use skills
+                if tick() - lastSkillUse > 0.01 and #combatSettings.selectedSkills > 0 then
+                    local skill = combatSettings.selectedSkills[combatSettings.currentSkillIndex]
+                    useSkill(skill)
+                    combatSettings.currentSkillIndex = combatSettings.currentSkillIndex + 1
+                    if combatSettings.currentSkillIndex > #combatSettings.selectedSkills then
+                        combatSettings.currentSkillIndex = 1
+                    end
+                end
+                
+                -- Auto attack
+                spawn(function()
+                    while not hasCooldown("MOUSEBUTTON1")
+                        and _G.CombatEnabled
+                        and isInCombat
+                        and isTargetAlive(currentTarget)
+                        and not _G.CrateCollecting
+                        and not _G.ItemAutoSaving
+                        and not _G.LootCollecting do
+                        useSkill("MOUSEBUTTON1")
+                        task.wait(0.05)
+                    end
+                end)
+            else
+                currentTarget = nil
+                isInCombat = false
+            end
+            
             task.wait(0.15)
         end
     end
@@ -333,6 +319,7 @@ Players.LocalPlayer.CharacterAdded:Connect(function(character)
     task.wait(2)
     if _G.CombatEnabled then
         currentTarget = nil
+        chestToLoot = nil
         if heartbeatTPConnection then
             heartbeatTPConnection:Disconnect()
             heartbeatTPConnection = nil
