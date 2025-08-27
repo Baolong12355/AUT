@@ -210,6 +210,31 @@ local SlayerQuestToggle = CombatTab:CreateToggle({
     end
 })
 
+CombatTab:CreateSection("Auto One Shot")
+
+local OneShotSlider = CombatTab:CreateSlider({
+    Name = "Ngưỡng HP One Shot (%)",
+    Range = {1, 100},
+    Increment = 1,
+    CurrentValue = 50,
+    Flag = "OneShotHPThreshold",
+    Callback = function(Value)
+        getgenv().AutoOneShotHPThreshold = Value
+    end
+})
+
+local OneShotToggle = CombatTab:CreateToggle({
+    Name = "Auto One Shot (HP dưới ngưỡng)",
+    CurrentValue = false,
+    Flag = "OneShotEnabled",
+    Callback = function(Value)
+        getgenv().AutoOneShotting = Value
+        if Value and not _G.LoadedScripts.oneshot then
+            loadScript("oneshot", SCRIPTS.oneshot)
+        end
+    end
+})
+
 -- === ITEM TAB ===
 ItemTab:CreateSection("Auto Save Item")
 
