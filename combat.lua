@@ -80,17 +80,14 @@ local function getTargetFromPath(path)
     return success and result or nil
 end
 
-
-local function isTargetAlive(target)
-    if not isValidTarget(target) then return false end
-    return target.Parent == workspace:FindFirstChild("Living")
+local function isValidTarget(target)
+    return target and target.Parent and target:FindFirstChild("HumanoidRootPart") and target:FindFirstChild("Humanoid")
 end
 
 local function isTargetAlive(target)
     if not isValidTarget(target) then return false end
     return target.Parent == workspace:FindFirstChild("Living")
 end
-
 
 local function isStunned()
     local character = localPlayer.Character
@@ -254,7 +251,7 @@ local function startHeartbeatTeleport()
     end)
 end
 
--- Combat loop, không kiểm tra target còn sống
+-- Combat loop: PHẢI check target còn tồn tại trong Living để đổi target!
 spawn(function()
     startHeartbeatTeleport()
     while true do
@@ -271,7 +268,8 @@ spawn(function()
         elseif not _G.CombatEnabled then
             task.wait()
         else
-            if not currentTarget then
+            -- SỬA ĐÚNG: Luôn check target đã biến mất khỏi Living thì đổi target!
+            if not currentTarget or not isTargetAlive(currentTarget) then
                 currentTarget = findRandomTarget()
             else
                 chestToLoot = checkForChestToLoot()
