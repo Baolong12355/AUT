@@ -52,7 +52,11 @@ local targetLists = {
 
 local waitPositions = {
     cultists = Vector3.new(10291.4921875, 6204.5986328125, -255.45745849609375),
-    cursed = Vector3.new(-240.7166290283203, 233.30340576171875, 417.1275939941406)
+    cursed = Vector3.new(-240.7166290283203, 233.30340576171875, 417.1275939941406),
+    hooligans = Vector3.new(-639.7789916992188, 140.69998931884766, -296.6244201660156),
+    prisoners = Vector3.new(-678.3929443359375, 140.74999237060547, -1217.9285888671875),
+    thugs = Vector3.new(-1339.493408203125, 84.84996795654297, -769.4411010742188),
+    pirates = Vector3.new(11057.8291015625, -188.23373413085938, 11958.8271484375)
 }
 
 local FireInput = ReplicatedStorage.ReplicatedModules.KnitPackage.Knit.Services.MoveInputService.RF.FireInput
