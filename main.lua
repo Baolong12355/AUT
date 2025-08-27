@@ -158,7 +158,7 @@ local CombatToggle = CombatTab:CreateToggle({
 
 local CombatTypeDropdown = CombatTab:CreateDropdown({
     Name = "Loại Quái",
-    Options = {"cultists", "cursed", "hooligans", "prisoners", "thugs", "pirates"},
+    Options = {"cultists", "cursed", "hooligans", "prisoners", "thugs", "pirates", "guardian"},
     CurrentOption = {"cultists"},
     Flag = "CombatType",
     Callback = function(Options)
