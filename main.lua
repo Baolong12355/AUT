@@ -25,7 +25,8 @@ local SCRIPTS = {
     specialgrade = REPO_BASE .. "SpecialGradeQuest.lua",
     speciallevelfarm = REPO_BASE .. "SpecialLevelFarm.lua", 
     oneshot = REPO_BASE .. "oneshot.lua",
-    autohaki = REPO_BASE .. "autohaki.lua"
+    autohaki = REPO_BASE .. "autohaki.lua",
+    standstate = REPO_BASE .. "autostandonoff.lua"
 }
 
 -- Item list dùng trực tiếp (không lấy từ link)
@@ -201,6 +202,26 @@ local CombatSkillsDropdown = CombatTab:CreateDropdown({
 CombatTab:CreateParagraph({
     Title = "Hướng Dẫn Skills",
     Content = "• Skills thường: B, Q, E, R...\n• Skills nâng cao: B+, Q+, E+, R+...\n• M2: MOUSEBUTTON2\n• Có thể chọn nhiều skills cùng lúc"
+})
+
+CombatTab:CreateSection("Auto Stand On/Off")
+
+local StandStateDropdown = CombatTab:CreateDropdown({
+    Name = "Chế độ Stand",
+    Options = {"off", "on"},
+    CurrentOption = {"off"},
+    Flag = "StandStateMode",
+    Callback = function(Options)
+        local mode = Options[1]
+        if mode == "on" or mode == "off" then
+            getgenv().AutoStandState = mode
+            if not _G.LoadedScripts.standstate then
+                loadScript("standstate", SCRIPTS.standstate)
+            end
+        else
+            getgenv().AutoStandState = nil
+        end
+    end
 })
 
 local SlayerQuestToggle = CombatTab:CreateToggle({
