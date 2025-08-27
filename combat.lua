@@ -40,7 +40,7 @@ local targetLists = {
         "workspace.Living.Hooligan"
     },
     prisoners = {
-        "workspace.Living['Fleeing Prisoner']"
+        "workspace.Living.Fleeing Prisoner"
     },
     thugs = {
         "workspace.Living.Thug"
