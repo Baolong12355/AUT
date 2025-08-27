@@ -80,11 +80,16 @@ local function getTargetFromPath(path)
     return success and result or nil
 end
 
+
 local function isValidTarget(target)
     return target and target:FindFirstChild("HumanoidRootPart") and target:FindFirstChild("Humanoid")
 end
 
--- ĐÃ BỎ isTargetAlive HOÀN TOÀN
+local function isTargetAlive(target)
+    if not isValidTarget(target) then return false end
+    return target.Parent == workspace:FindFirstChild("Living")
+end
+
 
 local function isStunned()
     local character = localPlayer.Character
