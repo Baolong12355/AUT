@@ -1,3 +1,4 @@
+-- AutoOneShotting Script (tích hợp loader)
 getgenv().AutoOneShotting = getgenv().AutoOneShotting or false
 local hpPercentThreshold = 50 -- one shot nếu máu hiện tại <= 50% máu tối đa
 
@@ -39,7 +40,8 @@ local function doOneShot()
     end
 end
 
-if not getgenv()._AutoOneShotConnection then
+-- Đảm bảo chỉ tạo 1 connection duy nhất
+if not getgenv()._AutoOneShotConnection or not getgenv()._AutoOneShotConnection.Connected then
     getgenv()._AutoOneShotConnection = game:GetService("RunService").RenderStepped:Connect(function()
         if getgenv().AutoOneShotting == true then
             pcall(doOneShot)
