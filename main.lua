@@ -23,7 +23,8 @@ local SCRIPTS = {
     combat = REPO_BASE .. "combat.lua",
     asc = REPO_BASE .. "asc.lua",
     specialgrade = REPO_BASE .. "SpecialGradeQuest.lua",
-    speciallevelfarm = REPO_BASE .. "SpecialLevelFarm.lua" -- THÊM DÒNG NÀY
+    speciallevelfarm = REPO_BASE .. "SpecialLevelFarm.lua", 
+    oneshot = REPO_BASE .. "oneshot.lua"
 }
 
 -- Item list dùng trực tiếp (không lấy từ link)
