@@ -207,31 +207,36 @@ CombatTab:CreateParagraph({
 CombatTab:CreateSection("Auto Stand On/Off")
 
 local StandAutoToggle = CombatTab:CreateToggle({
-    Name = "Auto Stand (Bật/Tắt Nhanh)",
-    CurrentValue = false,
-    Flag = "AutoStandToggle",
+    Name = "Auto Stand (Bật/Tắt)",
+    CurrentValue = getgenv().AutoStandEnabled or false,
+    Flag = "AutoStandEnabled",
     Callback = function(Value)
-        if Value then
-            getgenv().AutoStandState = "on"
+        getgenv().AutoStandEnabled = Value
+        -- Khi tắt thì nên set trạng thái về nil luôn cho chắc chắn
+        if not Value then
+            getgenv().AutoStandState = nil
         else
-            getgenv().AutoStandState = "off"
-        end
-        if not _G.LoadedScripts.standstate then
-            loadScript("standstate", SCRIPTS.standstate)
+            -- Khi bật mà chưa chọn mode thì mặc định là "on"
+            if getgenv().AutoStandState ~= "on" and getgenv().AutoStandState ~= "off" then
+                getgenv().AutoStandState = "on"
+            end
+            if not _G.LoadedScripts.standstate then
+                loadScript("standstate", SCRIPTS.standstate)
+            end
         end
     end
 })
 
 local StandStateDropdown = CombatTab:CreateDropdown({
-    Name = "Chế độ Stand (Thủ công)",
-    Options = {"off", "on"},
-    CurrentOption = {"off"},
+    Name = "Chế độ Stand",
+    Options = {"on", "off"},
+    CurrentOption = {"on"},
     Flag = "StandStateMode",
     Callback = function(Options)
         local mode = Options[1]
         if mode == "on" or mode == "off" then
             getgenv().AutoStandState = mode
-            if not _G.LoadedScripts.standstate then
+            if getgenv().AutoStandEnabled and not _G.LoadedScripts.standstate then
                 loadScript("standstate", SCRIPTS.standstate)
             end
         else
