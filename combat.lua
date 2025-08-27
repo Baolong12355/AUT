@@ -81,8 +81,9 @@ local function getTargetFromPath(path)
 end
 
 
-local function isValidTarget(target)
-    return target and target:FindFirstChild("HumanoidRootPart") and target:FindFirstChild("Humanoid")
+local function isTargetAlive(target)
+    if not isValidTarget(target) then return false end
+    return target.Parent == workspace:FindFirstChild("Living")
 end
 
 local function isTargetAlive(target)
