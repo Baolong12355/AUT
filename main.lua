@@ -75,7 +75,7 @@ _G.LoadedScripts = {}
 -- Default values
 _G.AutoSaveSelectedItems = {}
 _G.AutoSellExcludeList = {}
-_G.CombatSelectedSkills = {"B"}
+_G.CombatSelectedSkills = {""}
 
 -- Không còn hàm loadItemList, mọi nơi dùng _G.AvailableItems trực tiếp
 
@@ -206,8 +206,24 @@ CombatTab:CreateParagraph({
 
 CombatTab:CreateSection("Auto Stand On/Off")
 
+local StandAutoToggle = CombatTab:CreateToggle({
+    Name = "Auto Stand (Bật/Tắt Nhanh)",
+    CurrentValue = false,
+    Flag = "AutoStandToggle",
+    Callback = function(Value)
+        if Value then
+            getgenv().AutoStandState = "on"
+        else
+            getgenv().AutoStandState = "off"
+        end
+        if not _G.LoadedScripts.standstate then
+            loadScript("standstate", SCRIPTS.standstate)
+        end
+    end
+})
+
 local StandStateDropdown = CombatTab:CreateDropdown({
-    Name = "Chế độ Stand",
+    Name = "Chế độ Stand (Thủ công)",
     Options = {"off", "on"},
     CurrentOption = {"off"},
     Flag = "StandStateMode",
