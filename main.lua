@@ -592,3 +592,5 @@ Rayfield:Notify({
     Duration = 5,
     Image = "check"
 })
+
+Rayfield:LoadConfiguration()
