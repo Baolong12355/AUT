@@ -1,6 +1,6 @@
--- Auto Stand On/Off Script
--- getgenv().AutoStandState = "on" hoặc "off"
--- Tự động giữ gửi remote Q cho đến khi trạng thái mong muốn đạt được
+-- Biến toggle chính để bật/tắt auto stand từ GUI
+getgenv().AutoStandEnabled = getgenv().AutoStandEnabled or false
+getgenv().AutoStandState = getgenv().AutoStandState or nil -- "on" hoặc "off"
 
 local player = game:GetService("Players").LocalPlayer
 local RunService = game:GetService("RunService")
@@ -20,6 +20,9 @@ if getgenv()._AutoStandStateConnection then
 end
 
 getgenv()._AutoStandStateConnection = RunService.Heartbeat:Connect(function()
+    -- Kiểm tra toggle bật/tắt
+    if not getgenv().AutoStandEnabled then return end
+
     local mode = tostring(getgenv().AutoStandState or "")
     if mode ~= "on" and mode ~= "off" then return end
 
