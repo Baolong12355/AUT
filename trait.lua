@@ -53,7 +53,6 @@ local function processTraits(traits)
     end
 end
 
--- Tìm trait pending ngay khi load
 local function getPendingTraitTable()
     for _, v in pairs(getgc(true)) do
         if type(v) == "table" and #v > 0 and type(v[1]) == "table" then
@@ -66,12 +65,21 @@ local function getPendingTraitTable()
     return nil
 end
 
-spawn(function()
-    task.wait(0.2)
-    local traits = getPendingTraitTable()
-    if traits then
-        processTraits(traits)
-    end
-end)
+-- Kết nối event chỉ một lần
+if not getgenv()._TraitAutoPick_Connection then
+    getgenv()._TraitAutoPick_Connection = TraitService.TraitHand:Connect(processTraits)
+end
 
-TraitService.TraitHand:Connect(processTraits)
+-- Hàm public để loader gọi lại khi bật/tắt toggle
+function _G.TriggerAutoPickTrait()
+    if _G.TraitAutoPickEnabled then
+        -- Kiểm tra trait pending và xử lý nếu có
+        local traits = getPendingTraitTable()
+        if traits then
+            processTraits(traits)
+        end
+    end
+end
+
+-- Tự động kiểm tra lần đầu khi script được load
+task.spawn(_G.TriggerAutoPickTrait)
