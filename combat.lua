@@ -72,6 +72,9 @@ local targetLists = {
     },
     pirates = {
         "workspace.Living.Pirate"
+    },
+    guardian = {
+        "workspace.Living.Guardian"
     }
 }
 
@@ -81,11 +84,9 @@ local waitPositions = {
     hooligans = Vector3.new(-639.7789916992188, 140.69998931884766, -296.6244201660156),
     prisoners = Vector3.new(-678.3929443359375, 140.74999237060547, -1217.9285888671875),
     thugs = Vector3.new(-1339.493408203125, 84.84996795654297, -769.4411010742188),
-    pirates = Vector3.new(11057.8291015625, -188.23373413085938, 11958.8271484375)
+    pirates = Vector3.new(11057.8291015625, -188.23373413085938, 11958.8271484375),
+    guardian = Vector3.new(-325.7615966796875, 14.61534118652344, 569.2650146484375)
 }
-
--- (phần còn lại giữ nguyên như cũ)
--- ...
 
 local FireInput = ReplicatedStorage.ReplicatedModules.KnitPackage.Knit.Services.MoveInputService.RF.FireInput
 
