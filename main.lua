@@ -469,6 +469,10 @@ local TraitToggle = TraitTab:CreateToggle({
         if Value and not _G.LoadedScripts.trait then
             loadScript("trait", SCRIPTS.trait)
         end
+        -- Luôn gọi lại hàm này mỗi lần bật
+        if _G.TriggerAutoPickTrait then
+            _G.TriggerAutoPickTrait()
+        end
     end
 })
 
