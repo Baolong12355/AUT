@@ -478,7 +478,7 @@ local TraitToggle = TraitTab:CreateToggle({
 
 local LegendaryTraitsDropdown = TraitTab:CreateDropdown({
     Name = "Legendary Traits Ưu Tiên",
-    Options = {"Prime", "Angelic", "Solar", "Cursed", "Vampiric", "Gluttonous", "Voided", "Gambler", "Overflowing", "Deferred", "True", "Cultivation", "Economic"},
+    Options = {"Prime", "Angelic", "Solar", "Cursed", "Vampiric", "Gluttonous", "Voided", "Gambler", "Overflowing", "Deferred", "True", "Cultivation", "Economic", "Frostbite"},
     CurrentOption = {"Prime"},
     MultipleOptions = true,
     Flag = "LegendaryTraits",
