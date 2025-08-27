@@ -84,11 +84,7 @@ local function isValidTarget(target)
     return target and target:FindFirstChild("HumanoidRootPart") and target:FindFirstChild("Humanoid")
 end
 
-local function isTargetAlive(target)
-    if not isValidTarget(target) then return false end
-    local humanoid = target:FindFirstChild("Humanoid")
-    return humanoid and humanoid.Health > 0
-end
+-- ĐÃ BỎ isTargetAlive HOÀN TOÀN
 
 local function isStunned()
     local character = localPlayer.Character
@@ -122,11 +118,9 @@ local function teleportBehindTarget(target)
     local playerRoot = character.HumanoidRootPart
     local targetCFrame = target.HumanoidRootPart.CFrame
     local behindPos = targetCFrame * CFrame.new(0, 0, 5)
-    
-    -- Xoay player về phía target
+
     local lookDirection = (target.HumanoidRootPart.Position - behindPos.Position).Unit
     local newCFrame = CFrame.lookAt(behindPos.Position, behindPos.Position + lookDirection)
-    
     character.HumanoidRootPart.CFrame = newCFrame
 end
 
@@ -135,10 +129,9 @@ local function escapeToHeight(target)
     if not character or not character:FindFirstChild("HumanoidRootPart") then return end
     local playerRoot = character.HumanoidRootPart
     local escapePos
-    
+
     if isValidTarget(target) then
         escapePos = target.HumanoidRootPart.Position + Vector3.new(0, _G.CombatEscapeHeight, 0)
-        -- Xoay player về phía target khi escape
         local lookDirection = (target.HumanoidRootPart.Position - escapePos).Unit
         local newCFrame = CFrame.lookAt(escapePos, escapePos + lookDirection)
         playerRoot.CFrame = newCFrame
@@ -163,7 +156,7 @@ end
 local function getSlayerBossTarget()
     for _, bossName in pairs(slayerBossMap) do
         local boss = Workspace.Living:FindFirstChild(bossName)
-        if boss and isTargetAlive(boss) then
+        if boss then
             return boss
         end
     end
@@ -195,25 +188,22 @@ end
 
 local function findRandomTarget()
     local validTargets = {}
-    
-    -- FIXED: Luôn kiểm tra chest trước, bất kể có boss slayer hay không
+
     chestToLoot = checkForChestToLoot()
-    
-    -- Ưu tiên slayer boss nếu có
+
     if _G.SlayerQuestActive then
         local boss = getSlayerBossTarget()
         if boss then table.insert(validTargets, boss) end
     end
-    
-    -- Thêm target thường
+
     local targetPaths = targetLists[_G.CombatTargetType]
     for _, path in ipairs(targetPaths or {}) do
         local target = getTargetFromPath(path)
-        if isTargetAlive(target) then
+        if isValidTarget(target) then
             table.insert(validTargets, target)
         end
     end
-    
+
     if #validTargets > 0 then
         return validTargets[math.random(1, #validTargets)]
     end
@@ -225,7 +215,7 @@ function _G.ResetCombatTarget()
     chestToLoot = nil
 end
 
--- Heartbeat teleport logic (liên tục giữ vị trí hợp lý với target)
+-- Heartbeat teleport logic, không check target còn sống
 local function startHeartbeatTeleport()
     if heartbeatTPConnection then
         heartbeatTPConnection:Disconnect()
@@ -236,21 +226,16 @@ local function startHeartbeatTeleport()
         if _G.CrateCollecting or _G.ItemAutoSaving or _G.LootCollecting then return end
         if not localPlayer.Character or not localPlayer.Character:FindFirstChild("HumanoidRootPart") then return end
 
-        -- Lấy target hiện tại
         if chestToLoot then
-            -- chest priority: giữ vị trí không dịch chuyển nếu đang combat
-            if currentTarget and isTargetAlive(currentTarget) then
+            if currentTarget then
                 if isStunned() or isRagdolled() then
                     escapeToHeight(currentTarget)
                 else
                     teleportBehindTarget(currentTarget)
                 end
-            else
-                -- Target chết hoặc không có target, không teleport
             end
         else
-            if not currentTarget or not isTargetAlive(currentTarget) then
-                -- Không có target, về vị trí đợi
+            if not currentTarget then
                 teleportToPosition(waitPositions[_G.CombatTargetType] or Vector3.new())
             else
                 if isStunned() or isRagdolled() then
@@ -263,11 +248,10 @@ local function startHeartbeatTeleport()
     end)
 end
 
--- Combat loop với chest priority được đồng bộ
+-- Combat loop, không kiểm tra target còn sống
 spawn(function()
     startHeartbeatTeleport()
     while true do
-        -- Check for setting changes and reset if needed
         if combatSettings.lastEnabled ~= _G.CombatEnabled or 
            combatSettings.lastTargetType ~= _G.CombatTargetType then
             _G.ResetCombatTarget()
@@ -275,25 +259,20 @@ spawn(function()
             combatSettings.lastTargetType = _G.CombatTargetType
         end
         combatSettings.selectedSkills = _G.CombatSelectedSkills or {"B"}
-        
+
         if _G.CrateCollecting or _G.ItemAutoSaving or _G.LootCollecting then
             task.wait()
         elseif not _G.CombatEnabled then
             task.wait()
         else
-            -- FIXED: Tìm target mới sẽ tự động kiểm tra chest
-            if not currentTarget or not isTargetAlive(currentTarget) then
+            if not currentTarget then
                 currentTarget = findRandomTarget()
             else
-                -- Vẫn kiểm tra chest ngay cả khi có target
                 chestToLoot = checkForChestToLoot()
             end
-            
-            if currentTarget and isTargetAlive(currentTarget) then
+
+            if currentTarget then
                 isInCombat = true
-                -- Teleport handled by heartbeat
-                
-                -- Use skills
                 if tick() - lastSkillUse > 0.01 and #combatSettings.selectedSkills > 0 then
                     local skill = combatSettings.selectedSkills[combatSettings.currentSkillIndex]
                     useSkill(skill)
@@ -302,13 +281,12 @@ spawn(function()
                         combatSettings.currentSkillIndex = 1
                     end
                 end
-                
-                -- Auto attack
+
                 spawn(function()
                     while not hasCooldown("MOUSEBUTTON1")
                         and _G.CombatEnabled
                         and isInCombat
-                        and isTargetAlive(currentTarget)
+                        and currentTarget
                         and not _G.CrateCollecting
                         and not _G.ItemAutoSaving
                         and not _G.LootCollecting do
@@ -320,7 +298,7 @@ spawn(function()
                 currentTarget = nil
                 isInCombat = false
             end
-            
+
             task.wait(0.15)
         end
     end
