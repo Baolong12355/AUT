@@ -25,6 +25,7 @@ local combatSettings = {
 }
 
 local targetLists = {
+    local targetLists = {
     cultists = {
         "workspace.Living.Assailant",
         "workspace.Living.Conjurer"
@@ -34,6 +35,18 @@ local targetLists = {
         "workspace.Living.Mantis Curse",
         "workspace.Living.Jujutsu Sorcerer",
         "workspace.Living.Flyhead"
+    },
+    hooligans = { -- Loại mới, dùng số nhiều cho nhất quán
+        "workspace.Living.Hooligan"
+    },
+    prisoners = {
+        "workspace.Living['Fleeing Prisoner']"
+    },
+    thugs = {
+        "workspace.Living.Thug"
+    },
+    pirates = {
+        "workspace.Living.Pirate"
     }
 }
 
