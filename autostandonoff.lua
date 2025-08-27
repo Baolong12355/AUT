@@ -1,7 +1,3 @@
--- Biến toggle chính để bật/tắt auto stand từ GUI
-getgenv().AutoStandEnabled = getgenv().AutoStandEnabled or false
-getgenv().AutoStandState = getgenv().AutoStandState or nil -- "on" hoặc "off"
-
 local player = game:GetService("Players").LocalPlayer
 local RunService = game:GetService("RunService")
 local UserInputRemote = game:GetService("ReplicatedStorage").ReplicatedModules.KnitPackage.Knit.Services.MoveInputService.RF.FireInput
@@ -14,15 +10,12 @@ local function getStandState()
     return states:FindFirstChild("StandOn"), states:FindFirstChild("StandOff")
 end
 
--- Ngắt kết nối cũ nếu có
 if getgenv()._AutoStandStateConnection then
     getgenv()._AutoStandStateConnection:Disconnect()
 end
 
 getgenv()._AutoStandStateConnection = RunService.Heartbeat:Connect(function()
-    -- Kiểm tra toggle bật/tắt
-    if not getgenv().AutoStandEnabled then return end
-
+    if not getgenv().AutoStandEnabled then return end -- Bật/Tắt tổng từ GUI
     local mode = tostring(getgenv().AutoStandState or "")
     if mode ~= "on" and mode ~= "off" then return end
 
