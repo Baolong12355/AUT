@@ -1,6 +1,6 @@
 -- AutoOneShotting Script (tích hợp loader)
 getgenv().AutoOneShotting = getgenv().AutoOneShotting or false
-local hpPercentThreshold = 50 -- one shot nếu máu hiện tại <= 50% máu tối đa
+local hpPercentThreshold = getgenv().AutoOneShotHPThreshold or 50
 
 local player = game.Players.LocalPlayer
 
