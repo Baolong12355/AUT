@@ -24,7 +24,8 @@ local SCRIPTS = {
     asc = REPO_BASE .. "asc.lua",
     specialgrade = REPO_BASE .. "SpecialGradeQuest.lua",
     speciallevelfarm = REPO_BASE .. "SpecialLevelFarm.lua", 
-    oneshot = REPO_BASE .. "oneshot.lua"
+    oneshot = REPO_BASE .. "oneshot.lua",
+    autohaki = REPO_BASE .. "autohaki.lua"
 }
 
 -- Item list dùng trực tiếp (không lấy từ link)
@@ -232,6 +233,18 @@ local OneShotToggle = CombatTab:CreateToggle({
         getgenv().AutoOneShotting = Value
         if Value and not _G.LoadedScripts.oneshot then
             loadScript("oneshot", SCRIPTS.oneshot)
+        end
+    end
+})
+
+local HakiToggle = CombatTab:CreateToggle({
+    Name = "Auto Bật Busoshoku Haki",
+    CurrentValue = false,
+    Flag = "AutoHakiEnabled",
+    Callback = function(Value)
+        getgenv().AutoHakiEnabled = Value
+        if Value and not _G.LoadedScripts.autohaki then
+            loadScript("autohaki", SCRIPTS.autohaki)
         end
     end
 })
