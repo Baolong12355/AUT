@@ -1,4 +1,4 @@
--- AUT Multi-Tool Hub (WindUI) - Lưu toàn bộ settings vào config
+-- AUT Multi-Tool Hub (WindUI) - Lưu toàn bộ settings vào config + Auto Load Config
 
 local WindUI = loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua"))()
 local Window = WindUI:CreateWindow({
@@ -41,47 +41,9 @@ local SCRIPTS = {
     autohaki = REPO_BASE .. "autohaki.lua",
     standstate = REPO_BASE .. "autostandonoff.lua"
 }
-
 _G.AvailableItems = {
-    "Mining Laser", "Phoenix Gemstone", "Jonathan's Signal", "Coal Loot", "Medic's Equipment",
-    "A New Fable", "Cursed Orb", "Blood of Joseph", "The Total Force Of Calamity", "Spin Energy Fragment",
-    "Umbra's Calamity Force", "Inverted Spear of Heaven", "Light of Hope", "Arrow", "Chest Key",
-    "Bone", "Heart", "Shaper's Essence", "Ban Hammer", "Chargin' Targe", "Yo-Yo",
-    "Mysterious Fragment", "Shanks' Calamity Force", "Clackers", "Joestar Blood Vial",
-    "Heavenly Restriction Awakening", "Knife", "Claw Fragment", "Gojo's Blindfold", "Stocking",
-    "Sorcerer's Scarf", "Green Baby", "Busoshoku Manual", "Azakana Mask", "Sovereign's Sword",
-    "West Blue Juice", "Heart of the Saint", "Paintball Gun", "Candy Bag", "Camellite",
-    "Nanotech Fragments", "Limitless Technique Scroll", "Sukuna's Calamity Force", "Requiem Arrow",
-    "Dio's Charm", "Superball", "Death Painting", "Candy Cutlass Blade", "Demonic Scroll",
-    "Dragon Ball", "NUCLEAR-CORE", "Watch", "Kuma's Book", "Saints Skull", "Vampirism Mastery",
-    "Stone Mask", "Saints Arms", "Soul Gemstone", "Sorcerer Killer Shard", "Saints Eyes",
-    "Corrupted Arrow", "Mero Devil Fruit", "Dragon Slayer", "Remembrance of the Sorcerer Killer",
-    "Split Soul Katana", "Refined Camellite", "Golden Hook", "Rocket Launcher",
-    "Remembrance of the Fallen", "Anshen's Leg Plates", "Tales Of The Universe", "Caesar's Headband",
-    "DIO's Bone", "Mahoraga's Calamity Force", "Flamethrower", "Evil Fragments", "Worn Out Scarf",
-    "Strange Briefcase", "Bomb", "Anshen's Lance", "Joseph's Signal", "Anshen's Arm Plates",
-    "Cultist Staff", "Camellite Arrow", "SHAPER // SWORD", "Cosmic Remnant", "The Vessel Shard",
-    "Kars' Calamity Force", "Calibrated Manifold", "STAR SEED", "Harmonic Decoder", "Sukuna's Finger",
-    "Heavenly Nectar", "Dormant Staff", "Dormant Dagger", "Hito Devil Fruit", "Cosmic Fragments",
-    "Meat On A Bone", "Fractured Sigil", "Geode", "Keycard", "The Denzien Of Hell's Calamity Force",
-    "Bait Vampire Mask", "Camellite Fragment", "Mining Laser MK2", "Catalyst", "Crystalline Core",
-    "Inhumane Spirit", "Shadow's Calamity Force", "Whitebeard's Calamity Force", "Locacaca",
-    "Fragment of Death", "Ancient Sword", "Metal Loot", "Anshen's Suit", "DIO's Diary",
-    "King of Curses Shard", "Mysterious Hat", "Slingshot", "Sovereign's Chapter", "Cultist Dagger",
-    "Remembrance of the Strongest", "Anshen's Helmet", "Draconic Gemstone", "Cursed Arm",
-    "Metal Ingot", "Gun Parts", "Metal Scraps", "Bisento", "Bouquet Of Flowers", "Eyelander",
-    "Cursed Gemstone", "Letter to Jonathan", "Aja Stone", "Hamon Imbued Frog", "Altered Steel Ball",
-    "Manual of Gryphon's Techniques", "Cursed Apple", "Shrine Item", "Godly Doctor's Poison",
-    "Anshen's Chestplate", "Simple Domain Essence", "Slime Energy", "Anshen's Wing Set",
-    "Haki Shard", "Remembrance of the Vessel", "Kenbunshoku Manual", "Monochromatic Gemstone",
-    "Arm Band", "Bat", "Haoshoku Manual", "Wheel of Dharma", "Playful Cloud", "Knight's Blade",
-    "Pumpkin", "Coal", "Saints Legs", "Rundown Mask", "Corrupted Soul", "Kinetic Orb",
-    "Letter to Joseph", "Saints Ribcage", "Jonathan's Worn Out Gloves", "Sword", "Gomu Devil Fruit",
-    "Kinetic Gemstone", "True Stone Mask", "Baroque Works Contractor Den Den", "Sanji's Cookbook",
-    "Ope Devil Fruit", "Grenade Launcher", "Dio's Remains", "Suna Devil Fruit", "Used Arrow",
-    "Tactical Vest", "Law's Cap", "Frog", "Trowel", "Saint's Corpse", "Monochromatic Orb"
+    "Mining Laser", "Phoenix Gemstone", "Jonathan's Signal", "Coal Loot", "Saint's Corpse", "Monochromatic Orb"
 }
-
 _G.LoadedScripts = {}
 _G.AutoSaveSelectedItems = {}
 _G.AutoSellExcludeList = {}
@@ -491,8 +453,22 @@ local ReloadAllButton = SettingsTab:Button({
     end
 })
 
------------------- CONFIG TAB (QUẢN LÝ CONFIG) ------------------
+------------------ CONFIG TAB (QUẢN LÝ CONFIG + AUTO LOAD) ------------------
 local ConfigManager = Window.ConfigManager
+local AUTOLOAD_FILE = "windui_autoload_config.txt"
+local function saveAutoLoadConfig(name, enabled)
+    if writefile then
+        writefile(AUTOLOAD_FILE, game:GetService("HttpService"):JSONEncode({config=name, enabled=enabled}))
+    end
+end
+local function readAutoLoadConfig()
+    if isfile and isfile(AUTOLOAD_FILE) then
+        local data = game:GetService("HttpService"):JSONDecode(readfile(AUTOLOAD_FILE))
+        return data.config or "", data.enabled
+    end
+    return "", false
+end
+
 local configNameInput = ConfigTab:Input({
     Title = "Tên Config Mới",
     Placeholder = "Nhập tên config...",
@@ -515,10 +491,45 @@ local configDropdown = ConfigTab:Dropdown({
         selectedConfig = option
     end
 })
+local autoLoadToggle = ConfigTab:Toggle({
+    Title = "Auto Load Config khi mở script",
+    Default = false,
+    Callback = function(state)
+        saveAutoLoadConfig(selectedConfig, state)
+        WindUI:Notify({
+            Title = "Auto Load",
+            Content = state and ("Auto Load config: " .. selectedConfig) or "Đã tắt Auto Load config!",
+            Duration = 3,
+            Icon = "check"
+        })
+    end
+})
+ConfigTab:Button({
+    Title = "Set Auto Load Config",
+    Callback = function()
+        if selectedConfig == "" then
+            WindUI:Notify({
+                Title = "Chưa chọn config",
+                Content = "Bạn phải chọn một config!",
+                Duration = 3,
+                Icon = "alert-circle"
+            })
+            return
+        end
+        saveAutoLoadConfig(selectedConfig, true)
+        autoLoadToggle:Set(true)
+        WindUI:Notify({
+            Title = "Đã đặt Auto Load",
+            Content = "Auto Load config: " .. selectedConfig,
+            Duration = 3,
+            Icon = "check"
+        })
+    end
+})
 ConfigTab:Button({
     Title = "Tạo & Lưu Config",
     Callback = function()
-        local name = configNameInput:Get() or ""
+        local name = configNameInput.Value or "" -- Sửa lỗi Get
         if name == "" then
             WindUI:Notify({
                 Title = "Tên thiếu",
@@ -645,6 +656,28 @@ ConfigTab:Button({
         end
     end
 })
+
+-- Khi script khởi động: tự động load config nếu đã set auto load
+local function autoLoadConfigOnStart()
+    local name, enabled = readAutoLoadConfig()
+    if enabled and name ~= "" then
+        local all = ConfigManager:AllConfigs()
+        for _,v in ipairs(all) do
+            if v.Name == name then
+                v:Load()
+                WindUI:Notify({
+                    Title = "Auto Load Config",
+                    Content = "Đã tự động load config: " .. name,
+                    Duration = 3,
+                    Icon = "check"
+                })
+                break
+            end
+        end
+    end
+end
+autoLoadConfigOnStart()
+
 WindUI:Notify({
     Title = "AUT Hub Loaded",
     Content = "Hub đã sẵn sàng sử dụng!",
