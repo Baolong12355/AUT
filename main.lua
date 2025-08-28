@@ -11,7 +11,16 @@ local Window = WindUI:CreateWindow({
     Resizable = true,
     SideBarWidth = 200,
 })
-Window:SetToggleKey(Enum.KeyCode.K)
+Window:EditOpenButton({
+    Title = "Open AUT Hub",
+    Icon = "monitor",
+    CornerRadius = UDim.new(0,16),
+    StrokeThickness = 2,
+    OnlyMobile = true,
+    Enabled = true,
+    Draggable = true,
+})
+Window:SetToggleKey(Enum.KeyCode.K) -- nếu vẫn muốn dùng phím K cho PC
 
 -- Services
 local Players = game:GetService("Players")
