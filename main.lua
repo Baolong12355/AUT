@@ -595,4 +595,10 @@ WindUI:Notify({
     Icon = "check"
 })
 
+CombatTab:Paragraph({Title = "Combat Tab", Desc = "Các tính năng combat sẽ ở đây."})
+ItemTab:Paragraph({Title = "Tab Vật Phẩm", Desc = "Chức năng vật phẩm."})
+QuestTab:Paragraph({Title = "Quest Tab", Desc = "Chức năng quest."})
+TraitTab:Paragraph({Title = "Trait & Stats Tab", Desc = "Chức năng trait & stats."})
+SettingsTab:Paragraph({Title = "Settings Tab", Desc = "Chức năng cài đặt."})
+
 myConfig:Load() -- Tải config khi mở hub
