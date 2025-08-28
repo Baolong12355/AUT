@@ -653,7 +653,7 @@ local StatsTypeDropdown = TraitTab:Dropdown({
     end
 })
 
-local StatsAmountSlider = local StatsAmountSlider = TraitTab:Slider({
+local StatsAmountSlider = TraitTab:Slider({
     Title = "Số Điểm Mỗi Lần",
     Desc = "Số điểm stats để phân phối mỗi lần",
     Value = {
