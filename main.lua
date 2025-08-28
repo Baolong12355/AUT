@@ -1,4 +1,4 @@
--- AUT Multi-Tool Hub - WindUI FULL + Auto Save Config cho toàn bộ chức năng chính
+-- AUT Multi-Tool Hub - WindUI FULL + Auto Save Config (SAFE) - Sửa lỗi chỉ hiện tab "Chính"
 
 local WindUI = loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua"))()
 local Window = WindUI:CreateWindow({
@@ -48,7 +48,7 @@ local SCRIPTS = {
 
 _G.AvailableItems = {
     "Mining Laser", "Phoenix Gemstone", "Jonathan's Signal", "Coal Loot", "Medic's Equipment",
-    -- ... thêm đầy đủ như mẫu Rayfield (cắt ngắn ở đây cho gọn, bạn có thể copy nguyên list cũ)
+    -- ... bạn thêm đầy đủ như mẫu Rayfield (cắt ngắn ở đây cho gọn, bạn có thể copy nguyên list cũ)
     "Saint's Corpse", "Monochromatic Orb"
 }
 
@@ -65,10 +65,16 @@ local function loadScript(name, url)
     return false
 end
 
+local function safeBool(val) return type(val)=="boolean" and val or false end
+local function safeTable(val) return type(val)=="table" and val or {} end
+local function safeString(val, def) return type(val)=="string" and val or def end
+local function safeNumber(val, def) return type(val)=="number" and val or def end
+
 -------------------------------------------
 -- ========== TAB CHÍNH ==========
 local MainTab = Window:Tab({Title = "Chính", Icon = "home"})
 MainTab:Section({Title = "Tải Script"})
+MainTab:Paragraph({Title = "Tab Chính", Desc = "Nơi tải và reload script."})
 local LoadAllButton = MainTab:Button({
     Title = "Tải Tất Cả Script",
     Callback = function()
@@ -89,11 +95,12 @@ local LoadAllButton = MainTab:Button({
 -------------------------------------------
 -- ========== TAB COMBAT ==========
 local CombatTab = Window:Tab({Title = "Combat", Icon = "sword"})
-CombatTab:Section({Title = "Auto Combat"})
+CombatTab:Paragraph({Title = "Combat Tab", Desc = "Tính năng combat."})
 
+CombatTab:Section({Title = "Auto Combat"})
 local CombatToggle = CombatTab:Toggle({
     Title = "Auto Combat",
-    Default = myConfig.Data.CombatEnabled or false,
+    Default = safeBool(myConfig.Data.CombatEnabled),
     Callback = function(Value)
         _G.CombatEnabled = Value
         if Value and not _G.LoadedScripts.combat then loadScript("combat", SCRIPTS.combat) end
@@ -106,7 +113,7 @@ myConfig:Register("CombatEnabled", CombatToggle)
 local CombatTypeDropdown = CombatTab:Dropdown({
     Title = "Loại Quái",
     Values = {"cultists", "cursed", "hooligans", "prisoners", "thugs", "pirates", "guardian"},
-    Value = myConfig.Data.CombatType or "cultists",
+    Value = safeString(myConfig.Data.CombatType, "cultists"),
     Callback = function(Options)
         _G.CombatTargetType = Options
         if _G.ResetCombatTarget then _G.ResetCombatTarget() end
@@ -118,7 +125,7 @@ myConfig:Register("CombatType", CombatTypeDropdown)
 local EscapeHeightSlider = CombatTab:Slider({
     Title = "Độ Cao Thoát (Studs)",
     Step = 5,
-    Value = {Min = 10, Max = 100, Default = myConfig.Data.EscapeHeight or 30},
+    Value = {Min = 10, Max = 100, Default = safeNumber(myConfig.Data.EscapeHeight, 30)},
     Callback = function(Value)
         _G.CombatEscapeHeight = Value
         myConfig:Save()
@@ -135,7 +142,7 @@ local availableSkills = {
 local CombatSkillsDropdown = CombatTab:Dropdown({
     Title = "Chọn Skills Combat",
     Values = availableSkills,
-    Value = myConfig.Data.CombatSkills or {"B"},
+    Value = safeTable(myConfig.Data.CombatSkills),
     Multi = true,
     Callback = function(Options)
         _G.CombatSelectedSkills = Options
@@ -152,7 +159,7 @@ CombatTab:Paragraph({
 CombatTab:Section({Title = "Auto Stand On/Off"})
 local StandAutoToggle = CombatTab:Toggle({
     Title = "Auto Stand (Bật/Tắt)",
-    Default = myConfig.Data.AutoStandEnabled or false,
+    Default = safeBool(myConfig.Data.AutoStandEnabled),
     Callback = function(Value)
         getgenv().AutoStandEnabled = Value
         if not Value then
@@ -171,7 +178,7 @@ myConfig:Register("AutoStandEnabled", StandAutoToggle)
 local StandStateDropdown = CombatTab:Dropdown({
     Title = "Chế độ Stand",
     Values = {"on", "off"},
-    Value = myConfig.Data.StandStateMode or "on",
+    Value = safeString(myConfig.Data.StandStateMode, "on"),
     Callback = function(mode)
         getgenv().AutoStandState = mode
         if getgenv().AutoStandEnabled and not _G.LoadedScripts.standstate then
@@ -184,7 +191,7 @@ myConfig:Register("StandStateMode", StandStateDropdown)
 
 local SlayerQuestToggle = CombatTab:Toggle({
     Title = "Ưu Tiên Slayer Boss",
-    Default = myConfig.Data.SlayerPriority or false,
+    Default = safeBool(myConfig.Data.SlayerPriority),
     Callback = function(Value)
         _G.SlayerQuestActive = Value
         myConfig:Save()
@@ -196,7 +203,7 @@ CombatTab:Section({Title = "Auto One Shot"})
 local OneShotSlider = CombatTab:Slider({
     Title = "Ngưỡng HP One Shot (%)",
     Step = 1,
-    Value = {Min = 1, Max = 100, Default = myConfig.Data.OneShotHPThreshold or 50},
+    Value = {Min = 1, Max = 100, Default = safeNumber(myConfig.Data.OneShotHPThreshold, 50)},
     Callback = function(Value)
         getgenv().AutoOneShotHPThreshold = Value
         myConfig:Save()
@@ -206,7 +213,7 @@ myConfig:Register("OneShotHPThreshold", OneShotSlider)
 
 local OneShotToggle = CombatTab:Toggle({
     Title = "Auto One Shot (HP dưới ngưỡng)",
-    Default = myConfig.Data.OneShotEnabled or false,
+    Default = safeBool(myConfig.Data.OneShotEnabled),
     Callback = function(Value)
         getgenv().AutoOneShotting = Value
         if Value and not _G.LoadedScripts.oneshot then loadScript("oneshot", SCRIPTS.oneshot) end
@@ -217,7 +224,7 @@ myConfig:Register("OneShotEnabled", OneShotToggle)
 
 local HakiToggle = CombatTab:Toggle({
     Title = "Auto Bật Busoshoku Haki",
-    Default = myConfig.Data.AutoHakiEnabled or false,
+    Default = safeBool(myConfig.Data.AutoHakiEnabled),
     Callback = function(Value)
         getgenv().AutoHakiEnabled = Value
         if Value and not _G.LoadedScripts.autohaki then loadScript("autohaki", SCRIPTS.autohaki) end
@@ -229,10 +236,12 @@ myConfig:Register("AutoHakiEnabled", HakiToggle)
 -------------------------------------------
 -- ========== TAB VẬT PHẨM ==========
 local ItemTab = Window:Tab({Title = "Vật Phẩm", Icon = "package"})
+ItemTab:Paragraph({Title = "Tab Vật Phẩm", Desc = "Chức năng vật phẩm."})
+
 ItemTab:Section({Title = "Auto Save Item"})
 local AutoSaveToggle = ItemTab:Toggle({
     Title = "Auto Save Item",
-    Default = myConfig.Data.AutoSaveItem or false,
+    Default = safeBool(myConfig.Data.AutoSaveItem),
     Callback = function(Value)
         _G.AutoSaveEnabled = Value
         if Value and not _G.LoadedScripts.autosave then loadScript("autosave", SCRIPTS.autosave) end
@@ -244,7 +253,7 @@ myConfig:Register("AutoSaveItem", AutoSaveToggle)
 local AutoSaveItemsDropdown = ItemTab:Dropdown({
     Title = "Chọn Items Cần Save",
     Values = _G.AvailableItems,
-    Value = myConfig.Data.AutoSaveItems or {},
+    Value = safeTable(myConfig.Data.AutoSaveItems),
     Multi = true,
     Callback = function(Options)
         _G.AutoSaveSelectedItems = Options
@@ -264,7 +273,7 @@ ItemTab:Button({
 ItemTab:Section({Title = "Auto Sell"})
 local AutoSellToggle = ItemTab:Toggle({
     Title = "Auto Sell",
-    Default = myConfig.Data.AutoSellEnabled or false,
+    Default = safeBool(myConfig.Data.AutoSellEnabled),
     Callback = function(Value)
         _G.AutoSellEnabled = Value
         if Value and not _G.LoadedScripts.sell then loadScript("sell", SCRIPTS.sell) end
@@ -276,7 +285,7 @@ myConfig:Register("AutoSellEnabled", AutoSellToggle)
 local AutoSellExcludeDropdown = ItemTab:Dropdown({
     Title = "Chọn Items KHÔNG Bán",
     Values = _G.AvailableItems,
-    Value = myConfig.Data.AutoSellExclude or {},
+    Value = safeTable(myConfig.Data.AutoSellExclude),
     Multi = true,
     Callback = function(Options)
         _G.AutoSellExcludeList = Options
@@ -288,7 +297,7 @@ myConfig:Register("AutoSellExclude", AutoSellExcludeDropdown)
 local SellDelaySlider = ItemTab:Slider({
     Title = "Sell Delay (giây)",
     Step = 5,
-    Value = {Min = 5, Max = 120, Default = myConfig.Data.SellDelay or 30},
+    Value = {Min = 5, Max = 120, Default = safeNumber(myConfig.Data.SellDelay, 30)},
     Callback = function(Value)
         _G.AutoSellDelay = Value
         myConfig:Save()
@@ -299,7 +308,7 @@ myConfig:Register("SellDelay", SellDelaySlider)
 ItemTab:Section({Title = "Loot & Crate"})
 local LootToggle = ItemTab:Toggle({
     Title = "Auto Loot Chest",
-    Default = myConfig.Data.LootEnabled or false,
+    Default = safeBool(myConfig.Data.LootEnabled),
     Callback = function(Value)
         _G.LootEnabled = Value
         if Value and not _G.LoadedScripts.loot then loadScript("loot", SCRIPTS.loot) end
@@ -310,7 +319,7 @@ myConfig:Register("LootEnabled", LootToggle)
 
 local CrateToggle = ItemTab:Toggle({
     Title = "Auto Crate Collector",
-    Default = myConfig.Data.CrateEnabled or false,
+    Default = safeBool(myConfig.Data.CrateEnabled),
     Callback = function(Value)
         _G.CrateCollectorEnabled = Value
         if Value and not _G.LoadedScripts.crate then loadScript("crate", SCRIPTS.crate) end
@@ -322,7 +331,7 @@ myConfig:Register("CrateEnabled", CrateToggle)
 local CrateDelaySlider = ItemTab:Slider({
     Title = "Crate Check Delay",
     Step = 10,
-    Value = {Min = 10, Max = 300, Default = myConfig.Data.CrateDelay or 60},
+    Value = {Min = 10, Max = 300, Default = safeNumber(myConfig.Data.CrateDelay, 60)},
     Callback = function(Value)
         _G.CrateLoopDelay = Value
         myConfig:Save()
@@ -333,7 +342,7 @@ myConfig:Register("CrateDelay", CrateDelaySlider)
 local CrateTPDelaySlider = ItemTab:Slider({
     Title = "Crate TP Delay",
     Step = 0.1,
-    Value = {Min = 0.1, Max = 2, Default = myConfig.Data.CrateTPDelay or 0.1},
+    Value = {Min = 0.1, Max = 2, Default = safeNumber(myConfig.Data.CrateTPDelay, 0.1)},
     Callback = function(Value)
         _G.CrateTPDelay = Value
         myConfig:Save()
@@ -344,11 +353,12 @@ myConfig:Register("CrateTPDelay", CrateTPDelaySlider)
 -------------------------------------------
 -- ========== TAB QUEST ==========
 local QuestTab = Window:Tab({Title = "Quest", Icon = "map"})
+QuestTab:Paragraph({Title = "Quest Tab", Desc = "Chức năng quest."})
 QuestTab:Section({Title = "Auto Quest"})
 
 local SlayerToggle = QuestTab:Toggle({
     Title = "Auto Slayer Quest",
-    Default = myConfig.Data.SlayerEnabled or false,
+    Default = safeBool(myConfig.Data.SlayerEnabled),
     Callback = function(Value)
         _G.SlayerQuestEnabled = Value
         if Value and not _G.LoadedScripts.slayer then loadScript("slayer", SCRIPTS.slayer) end
@@ -360,7 +370,7 @@ myConfig:Register("SlayerEnabled", SlayerToggle)
 local SlayerQuestDropdown = QuestTab:Dropdown({
     Title = "Slayer Quest Ưu Tiên",
     Values = {"Finger Bearer", "Gojo", "Xeno", "Bur", "Dragon knight", "Oni"},
-    Value = myConfig.Data.SlayerQuests or {"Finger Bearer"},
+    Value = safeTable(myConfig.Data.SlayerQuests),
     Multi = true,
     Callback = function(Options)
         _G.PreferredSlayerQuests = Options
@@ -371,7 +381,7 @@ myConfig:Register("SlayerQuests", SlayerQuestDropdown)
 
 local SpecialGradeToggle = QuestTab:Toggle({
     Title = "Auto Special Grade Quest",
-    Default = myConfig.Data.SpecialGradeEnabled or false,
+    Default = safeBool(myConfig.Data.SpecialGradeEnabled),
     Callback = function(Value)
         _G.SpecialGradeQuestEnabled = Value
         if Value and not _G.LoadedScripts.specialgrade then loadScript("specialgrade", SCRIPTS.specialgrade) end
@@ -383,7 +393,7 @@ myConfig:Register("SpecialGradeEnabled", SpecialGradeToggle)
 local SpecialGradeDelaySlider = QuestTab:Slider({
     Title = "Special Grade Delay",
     Step = 30,
-    Value = {Min = 30, Max = 300, Default = myConfig.Data.SpecialGradeDelay or 60},
+    Value = {Min = 30, Max = 300, Default = safeNumber(myConfig.Data.SpecialGradeDelay, 60)},
     Callback = function(Value)
         _G.SpecialGradeQuestDelay = Value
         myConfig:Save()
@@ -394,11 +404,12 @@ myConfig:Register("SpecialGradeDelay", SpecialGradeDelaySlider)
 -------------------------------------------
 -- ========== TAB TRAIT & STATS ==========
 local TraitTab = Window:Tab({Title = "Trait & Stats", Icon = "star"})
+TraitTab:Paragraph({Title = "Trait & Stats Tab", Desc = "Chức năng trait & stats."})
 TraitTab:Section({Title = "Auto Trait"})
 
 local TraitToggle = TraitTab:Toggle({
     Title = "Auto Pick Trait",
-    Default = myConfig.Data.TraitEnabled or false,
+    Default = safeBool(myConfig.Data.TraitEnabled),
     Callback = function(Value)
         _G.TraitAutoPickEnabled = Value
         if Value and not _G.LoadedScripts.trait then loadScript("trait", SCRIPTS.trait) end
@@ -411,7 +422,7 @@ myConfig:Register("TraitEnabled", TraitToggle)
 TraitTab:Dropdown({
     Title = "Legendary Traits Ưu Tiên",
     Values = {"Prime", "Angelic", "Solar", "Cursed", "Vampiric", "Gluttonous", "Voided", "Gambler", "Overflowing", "Deferred", "True", "Cultivation", "Economic", "Frostbite"},
-    Value = myConfig.Data.LegendaryTraits or {"Prime"},
+    Value = safeTable(myConfig.Data.LegendaryTraits),
     Multi = true,
     Callback = function(Options)
         _G.TraitList_Legendary = Options
@@ -422,7 +433,7 @@ TraitTab:Dropdown({
 TraitTab:Dropdown({
     Title = "Legendary Hexed Traits",
     Values = {"Overconfident Prime", "Fallen Angelic", "Icarus Solar", "Undying Cursed", "Ancient Vampiric", "Festering Gluttonous", "Abyssal Voided", "Idle Death Gambler", "Torrential Overflowing", "Fractured Deferred", "Vitriolic True", "Soul Reaping Cultivation", "Greedy Economic"},
-    Value = myConfig.Data.LegendaryHexedTraits or {"Overconfident Prime"},
+    Value = safeTable(myConfig.Data.LegendaryHexedTraits),
     Multi = true,
     Callback = function(Options)
         _G.TraitList_LegendaryHexed = Options
@@ -433,7 +444,7 @@ TraitTab:Dropdown({
 TraitTab:Dropdown({
     Title = "Mythic Traits Ưu Tiên",
     Values = {"Godly", "Temporal", "RCT", "Spiritual", "Ryoiki", "Adaptation"},
-    Value = myConfig.Data.MythicTraits or {"Godly"},
+    Value = safeTable(myConfig.Data.MythicTraits),
     Multi = true,
     Callback = function(Options)
         _G.TraitList_Mythic = Options
@@ -444,7 +455,7 @@ TraitTab:Dropdown({
 TraitTab:Dropdown({
     Title = "Mythic Hexed Traits",
     Values = {"Egotistic Godly", "FTL Temporal", "Automatic RCT", "Mastered Spiritual", "Overcharged Ryoiki", "Unbound Adaptation"},
-    Value = myConfig.Data.MythicHexedTraits or {"Egotistic Godly"},
+    Value = safeTable(myConfig.Data.MythicHexedTraits),
     Multi = true,
     Callback = function(Options)
         _G.TraitList_MythicHexed = Options
@@ -478,7 +489,7 @@ TraitTab:Button({
 TraitTab:Section({Title = "Auto Stats"})
 local StatsToggle = TraitTab:Toggle({
     Title = "Auto Stats",
-    Default = myConfig.Data.StatsEnabled or false,
+    Default = safeBool(myConfig.Data.StatsEnabled),
     Callback = function(Value)
         _G.AutoStatsEnabled = Value
         if Value and not _G.LoadedScripts.stats then loadScript("stats", SCRIPTS.stats) end
@@ -490,7 +501,7 @@ myConfig:Register("StatsEnabled", StatsToggle)
 local StatsTypeDropdown = TraitTab:Dropdown({
     Title = "Loại Stats",
     Values = {"Attack", "Defense", "Health", "Special"},
-    Value = myConfig.Data.StatsType or "Attack",
+    Value = safeString(myConfig.Data.StatsType, "Attack"),
     Callback = function(Options)
         _G.AutoStatsType = Options
         myConfig:Save()
@@ -501,7 +512,7 @@ myConfig:Register("StatsType", StatsTypeDropdown)
 local StatsAmountSlider = TraitTab:Slider({
     Title = "Số Điểm Mỗi Lần",
     Step = 1,
-    Value = {Min = 1, Max = 50, Default = myConfig.Data.StatsAmount or 1},
+    Value = {Min = 1, Max = 50, Default = safeNumber(myConfig.Data.StatsAmount, 1)},
     Callback = function(Value)
         _G.AutoStatsAmount = Value
         myConfig:Save()
@@ -512,7 +523,7 @@ myConfig:Register("StatsAmount", StatsAmountSlider)
 TraitTab:Section({Title = "Auto Ascend & Feed"})
 local AscendToggle = TraitTab:Toggle({
     Title = "Auto Ascend",
-    Default = myConfig.Data.AscendEnabled or false,
+    Default = safeBool(myConfig.Data.AscendEnabled),
     Callback = function(Value)
         _G.AutoAscendEnabled = Value
         if Value and not _G.LoadedScripts.asc then loadScript("asc", SCRIPTS.asc) end
@@ -523,7 +534,7 @@ myConfig:Register("AscendEnabled", AscendToggle)
 
 local FeedToggle = TraitTab:Toggle({
     Title = "Auto Feed Shards",
-    Default = myConfig.Data.FeedEnabled or false,
+    Default = safeBool(myConfig.Data.FeedEnabled),
     Callback = function(Value)
         _G.FeedShardsEnabled = Value
         if Value and not _G.LoadedScripts.feed then loadScript("feed", SCRIPTS.feed) end
@@ -535,10 +546,11 @@ myConfig:Register("FeedEnabled", FeedToggle)
 -------------------------------------------
 -- ========== TAB CÀI ĐẶT ==========
 local SettingsTab = Window:Tab({Title = "Cài Đặt", Icon = "settings"})
+SettingsTab:Paragraph({Title = "Settings Tab", Desc = "Chức năng cài đặt."})
 SettingsTab:Section({Title = "Banner Roll"})
 local BannerToggle = SettingsTab:Toggle({
     Title = "Auto Roll Banner",
-    Default = myConfig.Data.BannerEnabled or false,
+    Default = safeBool(myConfig.Data.BannerEnabled),
     Callback = function(Value)
         _G.RollBannerEnabled = Value
         if Value and not _G.LoadedScripts.rollbanner then loadScript("rollbanner", SCRIPTS.rollbanner) end
@@ -550,7 +562,7 @@ myConfig:Register("BannerEnabled", BannerToggle)
 SettingsTab:Section({Title = "level fram"})
 local SpecialLevelFarmToggle = SettingsTab:Toggle({
     Title = "special leveling",
-    Default = myConfig.Data.SpecialLevelFarmEnabled or false,
+    Default = safeBool(myConfig.Data.SpecialLevelFarmEnabled),
     Callback = function(Value)
         _G.SpecialLevelFarmEnabled = Value
         if Value and not _G.LoadedScripts.speciallevelfarm then loadScript("speciallevelfarm", SCRIPTS.speciallevelfarm) end
@@ -594,11 +606,5 @@ WindUI:Notify({
     Duration = 5,
     Icon = "check"
 })
-
-CombatTab:Paragraph({Title = "Combat Tab", Desc = "Các tính năng combat sẽ ở đây."})
-ItemTab:Paragraph({Title = "Tab Vật Phẩm", Desc = "Chức năng vật phẩm."})
-QuestTab:Paragraph({Title = "Quest Tab", Desc = "Chức năng quest."})
-TraitTab:Paragraph({Title = "Trait & Stats Tab", Desc = "Chức năng trait & stats."})
-SettingsTab:Paragraph({Title = "Settings Tab", Desc = "Chức năng cài đặt."})
 
 myConfig:Load() -- Tải config khi mở hub
