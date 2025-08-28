@@ -472,3 +472,6 @@ WindUI:Notify({
 
 -- Config: bạn có thể đăng ký các element vào Window.ConfigManager nếu muốn lưu cấu hình
 -- Xem docs WindUI về ConfigManager để tích hợp nếu cần.
+
+
+print(ok)
