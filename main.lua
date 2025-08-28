@@ -16,7 +16,7 @@ Window:EditOpenButton({
     Icon = "monitor",
     CornerRadius = UDim.new(0,16),
     StrokeThickness = 2,
-    OnlyMobile = true,
+    OnlyMobile = false,
     Enabled = true,
     Draggable = true,
 })
