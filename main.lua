@@ -657,6 +657,20 @@ ConfigTab:Button({
     end
 })
 
+ConfigTab:Button({
+    Title = "Reload Danh Sách Config",
+    Callback = function()
+        configDropdown:Refresh(getConfigList())
+        WindUI:Notify({
+            Title = "Đã reload danh sách config",
+            Content = "Danh sách config đã được cập nhật!",
+            Duration = 2,
+            Icon = "refresh-cw"
+        })
+    end
+})
+
+
 -- Khi script khởi động: tự động load config nếu đã set auto load
 local function autoLoadConfigOnStart()
     local name, enabled = readAutoLoadConfig()
