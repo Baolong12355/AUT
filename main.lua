@@ -1,10 +1,14 @@
--- AUT Main Loader - WindUI Version - Quản lý tất cả script với WindUI
+-- AUT Main Loader - WindUI Version - Mobile Optimized - Quản lý tất cả script với WindUI
 local WindUI = loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua"))()
 
 -- Services
 local Players = game:GetService("Players")
 local HttpService = game:GetService("HttpService")
+local UserInputService = game:GetService("UserInputService")
 local LocalPlayer = Players.LocalPlayer
+
+-- Detect if mobile
+local IsMobile = UserInputService.TouchEnabled and not UserInputService.KeyboardEnabled
 
 -- GitHub repository URLs
 local REPO_BASE = "https://raw.githubusercontent.com/Baolong12355/AUT/main/"
@@ -91,17 +95,42 @@ local function loadScript(name, url)
     return false
 end
 
--- Create main GUI with WindUI
+-- Create main GUI with WindUI - Mobile Optimized
 local Window = WindUI:CreateWindow({
     Title = "AUT Multi-Tool Hub",
     Icon = "shield",
     Author = "by Baolong",
     Folder = "AUTHub",
-    Size = UDim2.fromOffset(650, 500),
+    -- Mobile optimized size
+    Size = IsMobile and UDim2.fromOffset(400, 350) or UDim2.fromOffset(650, 500),
     Theme = "Dark",
-    Resizable = true,
-    Transparent = false
+    Resizable = not IsMobile, -- Disable resizing on mobile
+    Transparent = false,
+    -- Mobile specific settings
+    SideBarWidth = IsMobile and 150 or 200,
+    ScrollBarEnabled = true, -- Always enable scroll for mobile
+    HideSearchBar = IsMobile, -- Hide search bar on mobile to save space
 })
+
+-- Edit Open Button for mobile
+Window:EditOpenButton({
+    Title = "AUT Hub",
+    Icon = "shield",
+    CornerRadius = UDim.new(0, 12),
+    StrokeThickness = 2,
+    Color = ColorSequence.new(
+        Color3.fromHex("6366f1"), 
+        Color3.fromHex("8b5cf6")
+    ),
+    OnlyMobile = IsMobile, -- Only show on mobile when GUI is closed
+    Enabled = true,
+    Draggable = true,
+})
+
+-- Mobile-friendly toggle key (for devices with keyboards)
+if not IsMobile then
+    Window:SetToggleKey(Enum.KeyCode.K)
+end
 
 -- Create tabs
 local MainTab = Window:Tab({
@@ -160,6 +189,15 @@ local LoadAllButton = MainTab:Button({
         })
     end
 })
+
+-- Mobile status indicator
+if IsMobile then
+    MainTab:Paragraph({
+        Title = "Chế Độ Mobile",
+        Desc = "✓ Giao diện đã được tối ưu cho thiết bị di động\n✓ Kích thước màn hình nhỏ gọn\n✓ Nút mở GUI có thể kéo thả",
+        Color = "Green"
+    })
+end
 
 -- === COMBAT TAB ===
 CombatTab:Section({
@@ -232,9 +270,11 @@ local CombatSkillsDropdown = CombatTab:Dropdown({
     end
 })
 
+-- Mobile-optimized paragraph with shorter text
 CombatTab:Paragraph({
     Title = "Hướng Dẫn Skills",
-    Desc = "• Skills thường: B, Q, E, R...\n• Skills nâng cao: B+, Q+, E+, R+...\n• M2: MOUSEBUTTON2\n• Có thể chọn nhiều skills cùng lúc",
+    Desc = IsMobile and "• Skills thường: B, Q, E, R...\n• Skills+: B+, Q+, E+, R+...\n• M2: MOUSEBUTTON2" 
+                     or "• Skills thường: B, Q, E, R...\n• Skills nâng cao: B+, Q+, E+, R+...\n• M2: MOUSEBUTTON2\n• Có thể chọn nhiều skills cùng lúc",
     Color = "Blue"
 })
 
@@ -733,7 +773,8 @@ local SpecialLevelFarmToggle = SettingsTab:Toggle({
 
 SettingsTab:Paragraph({
     Title = "Ghi chú Max Item Bank",
-    Desc = "• Tự động nâng max item bank cho Hamon Base.\n• Yêu cầu: ĐÃ LÀM QUEST của Joseph's Informant và đang ở Hamon Base!",
+    Desc = IsMobile and "• Tự động nâng max item bank cho Hamon Base.\n• Yêu cầu: ĐÃ LÀM QUEST Joseph's Informant và đang ở Hamon Base!"
+                     or "• Tự động nâng max item bank cho Hamon Base.\n• Yêu cầu: ĐÃ LÀM QUEST của Joseph's Informant và đang ở Hamon Base!",
     Color = "Orange"
 })
 
@@ -742,9 +783,11 @@ SettingsTab:Section({
     Icon = "info"
 })
 
+-- Mobile-optimized paragraph with shorter text
 SettingsTab:Paragraph({
     Title = "AUT Multi-Tool Hub",
-    Desc = "• Tất cả script được load từ GitHub\n• Tự động đồng bộ cài đặt\n• Pause logic giữa các script\n• WindUI interface với theme tối ưu",
+    Desc = IsMobile and "• Scripts từ GitHub\n• Tự động đồng bộ\n• Pause logic\n• WindUI mobile-friendly"
+                     or "• Tất cả script được load từ GitHub\n• Tự động đồng bộ cài đặt\n• Pause logic giữa các script\n• WindUI interface với theme tối ưu",
     Color = "Blue"
 })
 
@@ -770,13 +813,210 @@ local ReloadAllButton = SettingsTab:Button({
     end
 })
 
--- Create keybind for toggle GUI (K key like original)
-Window:SetToggleKey(Enum.KeyCode.K)
+-- === AUTO SAVE SETTINGS ===
+-- Tạo Config Manager để tự động lưu/tải cài đặt
+local ConfigManager = Window.ConfigManager
+local MainConfig = ConfigManager:CreateConfig("AUTHubSettings")
 
--- Show completion notification
+-- Đăng ký tất cả các elements để auto save
+MainConfig:Register("CombatEnabled", CombatToggle)
+MainConfig:Register("CombatType", CombatTypeDropdown)
+MainConfig:Register("EscapeHeight", EscapeHeightSlider)
+MainConfig:Register("CombatSkills", CombatSkillsDropdown)
+MainConfig:Register("AutoStandEnabled", StandAutoToggle)
+MainConfig:Register("StandStateMode", StandStateDropdown)
+MainConfig:Register("SlayerPriority", SlayerQuestToggle)
+MainConfig:Register("OneShotHPThreshold", OneShotSlider)
+MainConfig:Register("OneShotEnabled", OneShotToggle)
+MainConfig:Register("AutoHakiEnabled", HakiToggle)
+
+MainConfig:Register("AutoSaveEnabled", AutoSaveToggle)
+MainConfig:Register("AutoSaveItems", AutoSaveItemsDropdown)
+MainConfig:Register("AutoSellEnabled", AutoSellToggle)
+MainConfig:Register("AutoSellExclude", AutoSellExcludeDropdown)
+MainConfig:Register("SellDelay", SellDelaySlider)
+MainConfig:Register("LootEnabled", LootToggle)
+MainConfig:Register("CrateEnabled", CrateToggle)
+MainConfig:Register("CrateDelay", CrateDelaySlider)
+MainConfig:Register("CrateTPDelay", CrateTPDelaySlider)
+
+MainConfig:Register("SlayerEnabled", SlayerToggle)
+MainConfig:Register("SlayerQuests", SlayerQuestDropdown)
+MainConfig:Register("SpecialGradeEnabled", SpecialGradeToggle)
+MainConfig:Register("SpecialGradeDelay", SpecialGradeDelaySlider)
+
+MainConfig:Register("TraitEnabled", TraitToggle)
+MainConfig:Register("LegendaryTraits", LegendaryTraitsDropdown)
+MainConfig:Register("LegendaryHexedTraits", LegendaryHexedTraitsDropdown)
+MainConfig:Register("MythicTraits", MythicTraitsDropdown)
+MainConfig:Register("MythicHexedTraits", MythicHexedTraitsDropdown)
+MainConfig:Register("StatsEnabled", StatsToggle)
+MainConfig:Register("StatsType", StatsTypeDropdown)
+MainConfig:Register("StatsAmount", StatsAmountSlider)
+MainConfig:Register("AscendEnabled", AscendToggle)
+MainConfig:Register("FeedEnabled", FeedToggle)
+
+MainConfig:Register("BannerEnabled", BannerToggle)
+MainConfig:Register("SpecialLevelFarmEnabled", SpecialLevelFarmToggle)
+
+-- Thêm các nút quản lý config vào Settings Tab
+SettingsTab:Section({
+    Title = "Quản Lý Cài Đặt",
+    Icon = "save"
+})
+
+local SaveConfigButton = SettingsTab:Button({
+    Title = "Lưu Cài Đặt",
+    Desc = "Lưu tất cả cài đặt hiện tại vào file",
+    Callback = function()
+        MainConfig:Save()
+        WindUI:Notify({
+            Title = "Đã Lưu",
+            Content = "Tất cả cài đặt đã được lưu thành công!",
+            Duration = 3,
+            Icon = "check"
+        })
+    end
+})
+
+local LoadConfigButton = SettingsTab:Button({
+    Title = "Tải Cài Đặt",
+    Desc = "Tải cài đặt đã lưu từ file",
+    Callback = function()
+        MainConfig:Load()
+        WindUI:Notify({
+            Title = "Đã Tải",
+            Content = "Cài đặt đã được tải và áp dụng!",
+            Duration = 3,
+            Icon = "download"
+        })
+    end
+})
+
+local ResetConfigButton = SettingsTab:Button({
+    Title = "Reset Cài Đặt",
+    Desc = "Reset tất cả cài đặt về mặc định",
+    Callback = function()
+        WindUI:Popup({
+            Title = "Xác Nhận Reset",
+            Icon = "alert-triangle",
+            Content = "Bạn có chắc muốn reset tất cả cài đặt về mặc định không?",
+            Buttons = {
+                {
+                    Title = "Hủy",
+                    Callback = function() end,
+                    Variant = "Tertiary",
+                },
+                {
+                    Title = "Reset",
+                    Icon = "refresh-ccw",
+                    Callback = function()
+                        -- Reset tất cả về giá trị mặc định
+                        CombatToggle:Set(false)
+                        CombatTypeDropdown:Select("cultists")
+                        EscapeHeightSlider:Set(30)
+                        CombatSkillsDropdown:Select({"B"})
+                        StandAutoToggle:Set(false)
+                        StandStateDropdown:Select("on")
+                        SlayerQuestToggle:Set(false)
+                        OneShotSlider:Set(50)
+                        OneShotToggle:Set(false)
+                        HakiToggle:Set(false)
+                        
+                        AutoSaveToggle:Set(false)
+                        AutoSaveItemsDropdown:Select({})
+                        AutoSellToggle:Set(false)
+                        AutoSellExcludeDropdown:Select({})
+                        SellDelaySlider:Set(30)
+                        LootToggle:Set(false)
+                        CrateToggle:Set(false)
+                        CrateDelaySlider:Set(60)
+                        CrateTPDelaySlider:Set(0.1)
+                        
+                        SlayerToggle:Set(false)
+                        SlayerQuestDropdown:Select({"Finger Bearer"})
+                        SpecialGradeToggle:Set(false)
+                        SpecialGradeDelaySlider:Set(60)
+                        
+                        TraitToggle:Set(false)
+                        LegendaryTraitsDropdown:Select({"Prime"})
+                        LegendaryHexedTraitsDropdown:Select({"Overconfident Prime"})
+                        MythicTraitsDropdown:Select({"Godly"})
+                        MythicHexedTraitsDropdown:Select({"Egotistic Godly"})
+                        StatsToggle:Set(false)
+                        StatsTypeDropdown:Select("Attack")
+                        StatsAmountSlider:Set(1)
+                        AscendToggle:Set(false)
+                        FeedToggle:Set(false)
+                        
+                        BannerToggle:Set(false)
+                        SpecialLevelFarmToggle:Set(false)
+                        
+                        WindUI:Notify({
+                            Title = "Reset Hoàn Tất",
+                            Content = "Tất cả cài đặt đã được reset về mặc định",
+                            Duration = 3,
+                            Icon = "refresh-ccw"
+                        })
+                    end,
+                    Variant = "Primary",
+                }
+            }
+        })
+    end
+})
+
+-- Mobile-optimized paragraph with shorter text
+SettingsTab:Paragraph({
+    Title = "Thông Tin Lưu Trữ",
+    Desc = IsMobile and "• Cài đặt lưu tự động trong WindUI\n• File: AUTHubSettings.json\n• Có thể backup và khôi phục\n• Reset xóa tất cả đã lưu"
+                     or "• Cài đặt được lưu tự động trong thư mục WindUI\n• File config: AUTHubSettings.json\n• Có thể backup và khôi phục cài đặt\n• Reset sẽ xóa tất cả cài đặt đã lưu",
+    Color = "Grey"
+})
+
+-- Additional mobile-specific features
+if IsMobile then
+    SettingsTab:Section({
+        Title = "Mobile Settings",
+        Icon = "smartphone"
+    })
+    
+    SettingsTab:Paragraph({
+        Title = "Mobile Controls",
+        Desc = "• Nút GUI có thể kéo thả\n• Giao diện tối ưu cho màn hình nhỏ\n• Scroll bar luôn hiện\n• Thanh tìm kiếm bị ẩn để tiết kiệm không gian",
+        Color = "Green"
+    })
+    
+    local MobileInfoButton = SettingsTab:Button({
+        Title = "Mobile Tips",
+        Desc = "Xem hướng dẫn sử dụng trên mobile",
+        Callback = function()
+            WindUI:Notify({
+                Title = "Mobile Tips",
+                Content = "• Kéo nút AUT Hub để di chuyển\n• Vuốt lên/xuống để scroll\n• Nhấn giữ để chọn nhiều item\n• GUI tự động thu gọn khi đóng",
+                Duration = 8,
+                Icon = "info"
+            })
+        end
+    })
+end
+
+-- Tự động tải cài đặt khi khởi động
+spawn(function()
+    wait(1) -- Đợi GUI load hoàn toàn
+    MainConfig:Load()
+    WindUI:Notify({
+        Title = "Cài Đặt Đã Tải",
+        Content = "Các cài đặt trước đó đã được khôi phục",
+        Duration = 2,
+        Icon = "settings"
+    })
+end)
+
+-- Show completion notification with mobile-specific message
 WindUI:Notify({
-    Title = "AUT Hub Loaded",
-    Content = "Hub đã sẵn sàng sử dụng!",
+    Title = IsMobile and "AUT Hub Mobile Ready" or "AUT Hub Loaded",
+    Content = IsMobile and "Hub mobile đã sẵn sàng sử dụng!" or "Hub đã sẵn sàng sử dụng!",
     Duration = 5,
     Icon = "check"
 })
