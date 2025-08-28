@@ -1,4 +1,4 @@
--- AUT Main Loader chuyển sang WindUI - Quản lý tất cả script với WindUI GUI
+-- AUT Multi-Tool Hub (WindUI) - Lưu toàn bộ settings vào config + Auto Load Config
 
 local WindUI = loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua"))()
 local Window = WindUI:CreateWindow({
@@ -11,17 +11,18 @@ local Window = WindUI:CreateWindow({
     Resizable = true,
     SideBarWidth = 200,
 })
+Window:EditOpenButton({
+    Title = "Open AUT Hub",
+    Icon = "monitor",
+    CornerRadius = UDim.new(0,16),
+    StrokeThickness = 2,
+    OnlyMobile = true,
+    Enabled = true,
+    Draggable = true,
+})
 Window:SetToggleKey(Enum.KeyCode.K)
 
--- Services
-local Players = game:GetService("Players")
-local HttpService = game:GetService("HttpService")
-local LocalPlayer = Players.LocalPlayer
-
--- GitHub repository URLs
 local REPO_BASE = "https://raw.githubusercontent.com/Baolong12355/AUT/main/"
-
--- Scripts URLs
 local SCRIPTS = {
     autosave = REPO_BASE .. "autosave.lua",
     sell = REPO_BASE .. "sell.lua",
@@ -35,52 +36,14 @@ local SCRIPTS = {
     combat = REPO_BASE .. "combat.lua",
     asc = REPO_BASE .. "asc.lua",
     specialgrade = REPO_BASE .. "SpecialGradeQuest.lua",
-    speciallevelfarm = REPO_BASE .. "SpecialLevelFarm.lua", 
+    speciallevelfarm = REPO_BASE .. "SpecialLevelFarm.lua",
     oneshot = REPO_BASE .. "oneshot.lua",
     autohaki = REPO_BASE .. "autohaki.lua",
     standstate = REPO_BASE .. "autostandonoff.lua"
 }
-
 _G.AvailableItems = {
-    "Mining Laser", "Phoenix Gemstone", "Jonathan's Signal", "Coal Loot", "Medic's Equipment",
-    "A New Fable", "Cursed Orb", "Blood of Joseph", "The Total Force Of Calamity", "Spin Energy Fragment",
-    "Umbra's Calamity Force", "Inverted Spear of Heaven", "Light of Hope", "Arrow", "Chest Key",
-    "Bone", "Heart", "Shaper's Essence", "Ban Hammer", "Chargin' Targe", "Yo-Yo",
-    "Mysterious Fragment", "Shanks' Calamity Force", "Clackers", "Joestar Blood Vial",
-    "Heavenly Restriction Awakening", "Knife", "Claw Fragment", "Gojo's Blindfold", "Stocking",
-    "Sorcerer's Scarf", "Green Baby", "Busoshoku Manual", "Azakana Mask", "Sovereign's Sword",
-    "West Blue Juice", "Heart of the Saint", "Paintball Gun", "Candy Bag", "Camellite",
-    "Nanotech Fragments", "Limitless Technique Scroll", "Sukuna's Calamity Force", "Requiem Arrow",
-    "Dio's Charm", "Superball", "Death Painting", "Candy Cutlass Blade", "Demonic Scroll",
-    "Dragon Ball", "NUCLEAR-CORE", "Watch", "Kuma's Book", "Saints Skull", "Vampirism Mastery",
-    "Stone Mask", "Saints Arms", "Soul Gemstone", "Sorcerer Killer Shard", "Saints Eyes",
-    "Corrupted Arrow", "Mero Devil Fruit", "Dragon Slayer", "Remembrance of the Sorcerer Killer",
-    "Split Soul Katana", "Refined Camellite", "Golden Hook", "Rocket Launcher",
-    "Remembrance of the Fallen", "Anshen's Leg Plates", "Tales Of The Universe", "Caesar's Headband",
-    "DIO's Bone", "Mahoraga's Calamity Force", "Flamethrower", "Evil Fragments", "Worn Out Scarf",
-    "Strange Briefcase", "Bomb", "Anshen's Lance", "Joseph's Signal", "Anshen's Arm Plates",
-    "Cultist Staff", "Camellite Arrow", "SHAPER // SWORD", "Cosmic Remnant", "The Vessel Shard",
-    "Kars' Calamity Force", "Calibrated Manifold", "STAR SEED", "Harmonic Decoder", "Sukuna's Finger",
-    "Heavenly Nectar", "Dormant Staff", "Dormant Dagger", "Hito Devil Fruit", "Cosmic Fragments",
-    "Meat On A Bone", "Fractured Sigil", "Geode", "Keycard", "The Denzien Of Hell's Calamity Force",
-    "Bait Vampire Mask", "Camellite Fragment", "Mining Laser MK2", "Catalyst", "Crystalline Core",
-    "Inhumane Spirit", "Shadow's Calamity Force", "Whitebeard's Calamity Force", "Locacaca",
-    "Fragment of Death", "Ancient Sword", "Metal Loot", "Anshen's Suit", "DIO's Diary",
-    "King of Curses Shard", "Mysterious Hat", "Slingshot", "Sovereign's Chapter", "Cultist Dagger",
-    "Remembrance of the Strongest", "Anshen's Helmet", "Draconic Gemstone", "Cursed Arm",
-    "Metal Ingot", "Gun Parts", "Metal Scraps", "Bisento", "Bouquet Of Flowers", "Eyelander",
-    "Cursed Gemstone", "Letter to Jonathan", "Aja Stone", "Hamon Imbued Frog", "Altered Steel Ball",
-    "Manual of Gryphon's Techniques", "Cursed Apple", "Shrine Item", "Godly Doctor's Poison",
-    "Anshen's Chestplate", "Simple Domain Essence", "Slime Energy", "Anshen's Wing Set",
-    "Haki Shard", "Remembrance of the Vessel", "Kenbunshoku Manual", "Monochromatic Gemstone",
-    "Arm Band", "Bat", "Haoshoku Manual", "Wheel of Dharma", "Playful Cloud", "Knight's Blade",
-    "Pumpkin", "Coal", "Saints Legs", "Rundown Mask", "Corrupted Soul", "Kinetic Orb",
-    "Letter to Joseph", "Saints Ribcage", "Jonathan's Worn Out Gloves", "Sword", "Gomu Devil Fruit",
-    "Kinetic Gemstone", "True Stone Mask", "Baroque Works Contractor Den Den", "Sanji's Cookbook",
-    "Ope Devil Fruit", "Grenade Launcher", "Dio's Remains", "Suna Devil Fruit", "Used Arrow",
-    "Tactical Vest", "Law's Cap", "Frog", "Trowel", "Saint's Corpse", "Monochromatic Orb"
+    "Mining Laser", "Phoenix Gemstone", "Jonathan's Signal", "Coal Loot", "Saint's Corpse", "Monochromatic Orb"
 }
-
 _G.LoadedScripts = {}
 _G.AutoSaveSelectedItems = {}
 _G.AutoSellExcludeList = {}
@@ -105,10 +68,11 @@ local ItemTab = Window:Tab({Title = "Vật Phẩm", Icon = "package"})
 local QuestTab = Window:Tab({Title = "Quest", Icon = "map"})
 local TraitTab = Window:Tab({Title = "Trait & Stats", Icon = "star"})
 local SettingsTab = Window:Tab({Title = "Cài Đặt", Icon = "settings"})
+local ConfigTab = Window:Tab({Title = "Config", Icon = "settings"})
 
--- === MAIN TAB ===
+------------------ MAIN TAB ------------------
 MainTab:Section({Title = "Tải Script"})
-MainTab:Button({
+local LoadAllButton = MainTab:Button({
     Title = "Tải Tất Cả Script",
     Callback = function()
         local loaded, total = 0, 0
@@ -125,9 +89,9 @@ MainTab:Button({
     end
 })
 
--- === COMBAT TAB ===
+------------------ COMBAT TAB ------------------
 CombatTab:Section({Title = "Auto Combat"})
-CombatTab:Toggle({
+local CombatToggleElement = CombatTab:Toggle({
     Title = "Auto Combat",
     Default = false,
     Callback = function(Value)
@@ -136,8 +100,7 @@ CombatTab:Toggle({
         if _G.ResetCombatTarget then _G.ResetCombatTarget() end
     end
 })
-
-CombatTab:Dropdown({
+local CombatTypeDropdownElement = CombatTab:Dropdown({
     Title = "Loại Quái",
     Values = {"cultists", "cursed", "hooligans", "prisoners", "thugs", "pirates", "guardian"},
     Value = "cultists",
@@ -146,8 +109,7 @@ CombatTab:Dropdown({
         if _G.ResetCombatTarget then _G.ResetCombatTarget() end
     end
 })
-
-CombatTab:Slider({
+local EscapeHeightSliderElement = CombatTab:Slider({
     Title = "Độ Cao Thoát (Studs)",
     Step = 5,
     Value = {Min = 10, Max = 100, Default = 30},
@@ -160,7 +122,7 @@ local availableSkills = {
     "B+", "Q+", "E+", "R+", "T+", "Y+", "U+", "F+", "G+", "H+", "Z+", "X+", "C+", "V+",
     "MOUSEBUTTON2"
 }
-CombatTab:Dropdown({
+local CombatSkillsDropdownElement = CombatTab:Dropdown({
     Title = "Chọn Skills Combat",
     Values = availableSkills,
     Value = {"B"},
@@ -173,7 +135,7 @@ CombatTab:Paragraph({
 })
 
 CombatTab:Section({Title = "Auto Stand On/Off"})
-CombatTab:Toggle({
+local StandAutoToggleElement = CombatTab:Toggle({
     Title = "Auto Stand (Bật/Tắt)",
     Default = getgenv().AutoStandEnabled or false,
     Callback = function(Value)
@@ -190,8 +152,7 @@ CombatTab:Toggle({
         end
     end
 })
-
-CombatTab:Dropdown({
+local StandStateDropdownElement = CombatTab:Dropdown({
     Title = "Chế độ Stand",
     Values = {"on", "off"},
     Value = "on",
@@ -206,21 +167,20 @@ CombatTab:Dropdown({
         end
     end
 })
-
-CombatTab:Toggle({
+local SlayerQuestToggleElement = CombatTab:Toggle({
     Title = "Ưu Tiên Slayer Boss",
     Default = false,
     Callback = function(Value) _G.SlayerQuestActive = Value end
 })
 
 CombatTab:Section({Title = "Auto One Shot"})
-CombatTab:Slider({
+local OneShotSliderElement = CombatTab:Slider({
     Title = "Ngưỡng HP One Shot (%)",
     Step = 1,
     Value = {Min = 1, Max = 100, Default = 50},
     Callback = function(Value) getgenv().AutoOneShotHPThreshold = Value end
 })
-CombatTab:Toggle({
+local OneShotToggleElement = CombatTab:Toggle({
     Title = "Auto One Shot (HP dưới ngưỡng)",
     Default = false,
     Callback = function(Value)
@@ -228,7 +188,7 @@ CombatTab:Toggle({
         if Value and not _G.LoadedScripts.oneshot then loadScript("oneshot", SCRIPTS.oneshot) end
     end
 })
-CombatTab:Toggle({
+local HakiToggleElement = CombatTab:Toggle({
     Title = "Auto Bật Busoshoku Haki",
     Default = false,
     Callback = function(Value)
@@ -237,9 +197,9 @@ CombatTab:Toggle({
     end
 })
 
--- === ITEM TAB ===
+------------------ ITEM TAB ------------------
 ItemTab:Section({Title = "Auto Save Item"})
-ItemTab:Toggle({
+local AutoSaveToggleElement = ItemTab:Toggle({
     Title = "Auto Save Item",
     Default = false,
     Callback = function(Value)
@@ -247,23 +207,22 @@ ItemTab:Toggle({
         if Value and not _G.LoadedScripts.autosave then loadScript("autosave", SCRIPTS.autosave) end
     end
 })
-ItemTab:Dropdown({
+local AutoSaveItemsDropdownElement = ItemTab:Dropdown({
     Title = "Chọn Items Cần Save",
     Values = _G.AvailableItems,
     Value = {},
     Multi = true,
     Callback = function(Options) _G.AutoSaveSelectedItems = Options end
 })
-ItemTab:Button({
+local AutoSaveManualButton = ItemTab:Button({
     Title = "Save Item Thủ Công",
     Callback = function()
         if not _G.LoadedScripts.autosave then loadScript("autosave", SCRIPTS.autosave) end
         if _G.TriggerAutoSave then _G.TriggerAutoSave() end
     end
 })
-
 ItemTab:Section({Title = "Auto Sell"})
-ItemTab:Toggle({
+local AutoSellToggleElement = ItemTab:Toggle({
     Title = "Auto Sell",
     Default = false,
     Callback = function(Value)
@@ -271,22 +230,21 @@ ItemTab:Toggle({
         if Value and not _G.LoadedScripts.sell then loadScript("sell", SCRIPTS.sell) end
     end
 })
-ItemTab:Dropdown({
+local AutoSellExcludeDropdownElement = ItemTab:Dropdown({
     Title = "Chọn Items KHÔNG Bán",
     Values = _G.AvailableItems,
     Value = {},
     Multi = true,
     Callback = function(Options) _G.AutoSellExcludeList = Options end
 })
-ItemTab:Slider({
+local SellDelaySliderElement = ItemTab:Slider({
     Title = "Sell Delay (giây)",
     Step = 5,
     Value = {Min = 5, Max = 120, Default = 30},
     Callback = function(Value) _G.AutoSellDelay = Value end
 })
-
 ItemTab:Section({Title = "Loot & Crate"})
-ItemTab:Toggle({
+local LootToggleElement = ItemTab:Toggle({
     Title = "Auto Loot Chest",
     Default = false,
     Callback = function(Value)
@@ -294,7 +252,7 @@ ItemTab:Toggle({
         if Value and not _G.LoadedScripts.loot then loadScript("loot", SCRIPTS.loot) end
     end
 })
-ItemTab:Toggle({
+local CrateToggleElement = ItemTab:Toggle({
     Title = "Auto Crate Collector",
     Default = false,
     Callback = function(Value)
@@ -302,22 +260,22 @@ ItemTab:Toggle({
         if Value and not _G.LoadedScripts.crate then loadScript("crate", SCRIPTS.crate) end
     end
 })
-ItemTab:Slider({
+local CrateDelaySliderElement = ItemTab:Slider({
     Title = "Crate Check Delay",
     Step = 10,
     Value = {Min = 10, Max = 300, Default = 60},
     Callback = function(Value) _G.CrateLoopDelay = Value end
 })
-ItemTab:Slider({
+local CrateTPDelaySliderElement = ItemTab:Slider({
     Title = "Crate TP Delay",
     Step = 0.1,
     Value = {Min = 0.1, Max = 2, Default = 0.1},
     Callback = function(Value) _G.CrateTPDelay = Value end
 })
 
--- === QUEST TAB ===
+------------------ QUEST TAB ------------------
 QuestTab:Section({Title = "Auto Quest"})
-QuestTab:Toggle({
+local SlayerToggleElement = QuestTab:Toggle({
     Title = "Auto Slayer Quest",
     Default = false,
     Callback = function(Value)
@@ -325,14 +283,14 @@ QuestTab:Toggle({
         if Value and not _G.LoadedScripts.slayer then loadScript("slayer", SCRIPTS.slayer) end
     end
 })
-QuestTab:Dropdown({
+local SlayerQuestDropdownElement = QuestTab:Dropdown({
     Title = "Slayer Quest Ưu Tiên",
     Values = {"Finger Bearer", "Gojo", "Xeno", "Bur", "Dragon knight", "Oni"},
     Value = {"Finger Bearer"},
     Multi = true,
     Callback = function(Options) _G.PreferredSlayerQuests = Options end
 })
-QuestTab:Toggle({
+local SpecialGradeToggleElement = QuestTab:Toggle({
     Title = "Auto Special Grade Quest",
     Default = false,
     Callback = function(Value)
@@ -340,16 +298,16 @@ QuestTab:Toggle({
         if Value and not _G.LoadedScripts.specialgrade then loadScript("specialgrade", SCRIPTS.specialgrade) end
     end
 })
-QuestTab:Slider({
+local SpecialGradeDelaySliderElement = QuestTab:Slider({
     Title = "Special Grade Delay",
     Step = 30,
     Value = {Min = 30, Max = 300, Default = 60},
     Callback = function(Value) _G.SpecialGradeQuestDelay = Value end
 })
 
--- === TRAIT & STATS TAB ===
+------------------ TRAIT & STATS TAB ------------------
 TraitTab:Section({Title = "Auto Trait"})
-TraitTab:Toggle({
+local TraitToggleElement = TraitTab:Toggle({
     Title = "Auto Pick Trait",
     Default = false,
     Callback = function(Value)
@@ -358,35 +316,35 @@ TraitTab:Toggle({
         if _G.TriggerAutoPickTrait then _G.TriggerAutoPickTrait() end
     end
 })
-TraitTab:Dropdown({
+local LegendaryTraitsDropdownElement = TraitTab:Dropdown({
     Title = "Legendary Traits Ưu Tiên",
     Values = {"Prime", "Angelic", "Solar", "Cursed", "Vampiric", "Gluttonous", "Voided", "Gambler", "Overflowing", "Deferred", "True", "Cultivation", "Economic", "Frostbite"},
     Value = {"Prime"},
     Multi = true,
     Callback = function(Options) _G.TraitList_Legendary = Options end
 })
-TraitTab:Dropdown({
+local LegendaryHexedTraitsDropdownElement = TraitTab:Dropdown({
     Title = "Legendary Hexed Traits",
     Values = {"Overconfident Prime", "Fallen Angelic", "Icarus Solar", "Undying Cursed", "Ancient Vampiric", "Festering Gluttonous", "Abyssal Voided", "Idle Death Gambler", "Torrential Overflowing", "Fractured Deferred", "Vitriolic True", "Soul Reaping Cultivation", "Greedy Economic"},
     Value = {"Overconfident Prime"},
     Multi = true,
     Callback = function(Options) _G.TraitList_LegendaryHexed = Options end
 })
-TraitTab:Dropdown({
+local MythicTraitsDropdownElement = TraitTab:Dropdown({
     Title = "Mythic Traits Ưu Tiên",
     Values = {"Godly", "Temporal", "RCT", "Spiritual", "Ryoiki", "Adaptation"},
     Value = {"Godly"},
     Multi = true,
     Callback = function(Options) _G.TraitList_Mythic = Options end
 })
-TraitTab:Dropdown({
+local MythicHexedTraitsDropdownElement = TraitTab:Dropdown({
     Title = "Mythic Hexed Traits",
     Values = {"Egotistic Godly", "FTL Temporal", "Automatic RCT", "Mastered Spiritual", "Overcharged Ryoiki", "Unbound Adaptation"},
     Value = {"Egotistic Godly"},
     Multi = true,
     Callback = function(Options) _G.TraitList_MythicHexed = Options end
 })
-TraitTab:Button({
+local TraitHistoryButton = TraitTab:Button({
     Title = "Xem 5 Trait Đã Discard",
     Callback = function()
         if _G.TraitDiscardHistory and #_G.TraitDiscardHistory > 0 then
@@ -410,7 +368,7 @@ TraitTab:Button({
 })
 
 TraitTab:Section({Title = "Auto Stats"})
-TraitTab:Toggle({
+local StatsToggleElement = TraitTab:Toggle({
     Title = "Auto Stats",
     Default = false,
     Callback = function(Value)
@@ -418,13 +376,13 @@ TraitTab:Toggle({
         if Value and not _G.LoadedScripts.stats then loadScript("stats", SCRIPTS.stats) end
     end
 })
-TraitTab:Dropdown({
+local StatsTypeDropdownElement = TraitTab:Dropdown({
     Title = "Loại Stats",
     Values = {"Attack", "Defense", "Health", "Special"},
     Value = "Attack",
     Callback = function(Options) _G.AutoStatsType = Options end
 })
-TraitTab:Slider({
+local StatsAmountSliderElement = TraitTab:Slider({
     Title = "Số Điểm Mỗi Lần",
     Step = 1,
     Value = {Min = 1, Max = 50, Default = 1},
@@ -432,7 +390,7 @@ TraitTab:Slider({
 })
 
 TraitTab:Section({Title = "Auto Ascend & Feed"})
-TraitTab:Toggle({
+local AscendToggleElement = TraitTab:Toggle({
     Title = "Auto Ascend",
     Default = false,
     Callback = function(Value)
@@ -440,7 +398,7 @@ TraitTab:Toggle({
         if Value and not _G.LoadedScripts.asc then loadScript("asc", SCRIPTS.asc) end
     end
 })
-TraitTab:Toggle({
+local FeedToggleElement = TraitTab:Toggle({
     Title = "Auto Feed Shards",
     Default = false,
     Callback = function(Value)
@@ -449,9 +407,9 @@ TraitTab:Toggle({
     end
 })
 
--- === SETTINGS TAB ===
+------------------ SETTINGS TAB ------------------
 SettingsTab:Section({Title = "Banner Roll"})
-SettingsTab:Toggle({
+local BannerToggleElement = SettingsTab:Toggle({
     Title = "Auto Roll Banner",
     Default = false,
     Callback = function(Value)
@@ -459,9 +417,8 @@ SettingsTab:Toggle({
         if Value and not _G.LoadedScripts.rollbanner then loadScript("rollbanner", SCRIPTS.rollbanner) end
     end
 })
-
 SettingsTab:Section({Title = "level fram"})
-SettingsTab:Toggle({
+local SpecialLevelFarmToggleElement = SettingsTab:Toggle({
     Title = "special leveling",
     Default = false,
     Callback = function(Value)
@@ -469,7 +426,6 @@ SettingsTab:Toggle({
         if Value and not _G.LoadedScripts.speciallevelfarm then loadScript("speciallevelfarm", SCRIPTS.speciallevelfarm) end
     end
 })
-
 SettingsTab:Paragraph({
     Title = "Ghi chú Max Item Bank",
     Desc = "• Tự động nâng max item bank cho Hamon Base.\n• Yêu cầu: ĐÃ LÀM QUEST của Joseph's Informant và đang ở Hamon Base!"
@@ -479,7 +435,7 @@ SettingsTab:Paragraph({
     Title = "AUT Multi-Tool Hub",
     Desc = "• Tất cả script được load từ GitHub\n• Tự động đồng bộ cài đặt\n• Pause logic giữa các script\n• Phím tắt: K để ẩn/hiện GUI"
 })
-SettingsTab:Button({
+local ReloadAllButton = SettingsTab:Button({
     Title = "Reload Tất Cả Script",
     Callback = function()
         _G.LoadedScripts = {}
@@ -497,15 +453,265 @@ SettingsTab:Button({
     end
 })
 
+------------------ CONFIG TAB (QUẢN LÝ CONFIG + AUTO LOAD) ------------------
+local ConfigManager = Window.ConfigManager
+local AUTOLOAD_FILE = "windui_autoload_config.txt"
+local function saveAutoLoadConfig(name, enabled)
+    if writefile then
+        writefile(AUTOLOAD_FILE, game:GetService("HttpService"):JSONEncode({config=name, enabled=enabled}))
+    end
+end
+local function readAutoLoadConfig()
+    if isfile and isfile(AUTOLOAD_FILE) then
+        local data = game:GetService("HttpService"):JSONDecode(readfile(AUTOLOAD_FILE))
+        return data.config or "", data.enabled
+    end
+    return "", false
+end
+
+local function getConfigList()
+    -- Hỗ trợ cả WindUI:GetConfigs() (kiểu table) và WindUI:AllConfigs() (kiểu array)
+    local configs = {}
+    if ConfigManager.GetConfigs then
+        for name,_ in pairs(ConfigManager:GetConfigs()) do
+            table.insert(configs, name)
+        end
+    elseif ConfigManager.AllConfigs then
+        for _,v in ipairs(ConfigManager:AllConfigs()) do
+            table.insert(configs, v.Name)
+        end
+    end
+    return configs
+end
+
+
+local configNameInput = ConfigTab:Input({
+    Title = "Tên Config Mới",
+    Placeholder = "Nhập tên config...",
+    Value = "",
+})
+local function getConfigList()
+    local configs = ConfigManager:AllConfigs()
+    local names = {}
+    for i,v in ipairs(configs) do
+        table.insert(names, v.Name)
+    end
+    return names
+end
+
+local configDropdown = ConfigTab:Dropdown({
+    Title = "Chọn Config",
+    Values = getConfigList(),
+    Value = "",
+    Callback = function(option)
+        selectedConfig = option
+    end
+})
+
+local autoLoadToggle = ConfigTab:Toggle({
+    Title = "Auto Load Config khi mở script",
+    Default = false,
+    Callback = function(state)
+        saveAutoLoadConfig(selectedConfig, state)
+        WindUI:Notify({
+            Title = "Auto Load",
+            Content = state and ("Auto Load config: " .. selectedConfig) or "Đã tắt Auto Load config!",
+            Duration = 3,
+            Icon = "check"
+        })
+    end
+})
+ConfigTab:Button({
+    Title = "Set Auto Load Config",
+    Callback = function()
+        if selectedConfig == "" then
+            WindUI:Notify({
+                Title = "Chưa chọn config",
+                Content = "Bạn phải chọn một config!",
+                Duration = 3,
+                Icon = "alert-circle"
+            })
+            return
+        end
+        saveAutoLoadConfig(selectedConfig, true)
+        autoLoadToggle:Set(true)
+        WindUI:Notify({
+            Title = "Đã đặt Auto Load",
+            Content = "Auto Load config: " .. selectedConfig,
+            Duration = 3,
+            Icon = "check"
+        })
+    end
+})
+ConfigTab:Button({
+    Title = "Tạo & Lưu Config",
+    Callback = function()
+        local name = configNameInput.Value or "" -- Sửa lỗi Get
+        if name == "" then
+            WindUI:Notify({
+                Title = "Tên thiếu",
+                Content = "Bạn phải nhập tên config!",
+                Duration = 3,
+                Icon = "alert-circle"
+            })
+            return
+        end
+        local myConfig = ConfigManager:CreateConfig(name)
+        myConfig:Register("CombatEnabled", CombatToggleElement)
+        myConfig:Register("CombatType", CombatTypeDropdownElement)
+        myConfig:Register("EscapeHeight", EscapeHeightSliderElement)
+        myConfig:Register("CombatSkills", CombatSkillsDropdownElement)
+        myConfig:Register("AutoStandEnabled", StandAutoToggleElement)
+        myConfig:Register("StandStateMode", StandStateDropdownElement)
+        myConfig:Register("SlayerPriority", SlayerQuestToggleElement)
+        myConfig:Register("OneShotHPThreshold", OneShotSliderElement)
+        myConfig:Register("OneShotEnabled", OneShotToggleElement)
+        myConfig:Register("AutoHakiEnabled", HakiToggleElement)
+        myConfig:Register("AutoSaveEnabled", AutoSaveToggleElement)
+        myConfig:Register("AutoSaveItems", AutoSaveItemsDropdownElement)
+        myConfig:Register("AutoSellEnabled", AutoSellToggleElement)
+        myConfig:Register("AutoSellExclude", AutoSellExcludeDropdownElement)
+        myConfig:Register("SellDelay", SellDelaySliderElement)
+        myConfig:Register("LootEnabled", LootToggleElement)
+        myConfig:Register("CrateEnabled", CrateToggleElement)
+        myConfig:Register("CrateDelay", CrateDelaySliderElement)
+        myConfig:Register("CrateTPDelay", CrateTPDelaySliderElement)
+        myConfig:Register("SlayerEnabled", SlayerToggleElement)
+        myConfig:Register("SlayerQuests", SlayerQuestDropdownElement)
+        myConfig:Register("SpecialGradeEnabled", SpecialGradeToggleElement)
+        myConfig:Register("SpecialGradeDelay", SpecialGradeDelaySliderElement)
+        myConfig:Register("TraitEnabled", TraitToggleElement)
+        myConfig:Register("LegendaryTraits", LegendaryTraitsDropdownElement)
+        myConfig:Register("LegendaryHexedTraits", LegendaryHexedTraitsDropdownElement)
+        myConfig:Register("MythicTraits", MythicTraitsDropdownElement)
+        myConfig:Register("MythicHexedTraits", MythicHexedTraitsDropdownElement)
+        myConfig:Register("StatsEnabled", StatsToggleElement)
+        myConfig:Register("StatsType", StatsTypeDropdownElement)
+        myConfig:Register("StatsAmount", StatsAmountSliderElement)
+        myConfig:Register("AscendEnabled", AscendToggleElement)
+        myConfig:Register("FeedEnabled", FeedToggleElement)
+        myConfig:Register("BannerEnabled", BannerToggleElement)
+        myConfig:Register("SpecialLevelFarmEnabled", SpecialLevelFarmToggleElement)
+        myConfig:Save()
+        configDropdown:Refresh(getConfigList())
+        WindUI:Notify({
+            Title = "Đã lưu config",
+            Content = "Config ["..name.."] đã được tạo và lưu!",
+            Duration = 3,
+            Icon = "check"
+        })
+    end
+})
+ConfigTab:Button({
+    Title = "Load Config Được Chọn",
+    Callback = function()
+        if selectedConfig == "" then
+            WindUI:Notify({
+                Title = "Chưa chọn config",
+                Content = "Bạn phải chọn một config!",
+                Duration = 3,
+                Icon = "alert-circle"
+            })
+            return
+        end
+        local all = ConfigManager:AllConfigs()
+        local found
+        for _,v in ipairs(all) do
+            if v.Name == selectedConfig then found = v break end
+        end
+        if found then
+            found:Load()
+            WindUI:Notify({
+                Title = "Load thành công",
+                Content = "Đã load config: "..selectedConfig,
+                Duration = 3,
+                Icon = "check"
+            })
+        else
+            WindUI:Notify({
+                Title = "Không tìm thấy",
+                Content = "Config ["..selectedConfig.."] không tồn tại!",
+                Duration = 3,
+                Icon = "alert-circle"
+            })
+        end
+    end
+})
+ConfigTab:Button({
+    Title = "Xoá Config Được Chọn",
+    Callback = function()
+        if selectedConfig == "" then
+            WindUI:Notify({
+                Title = "Chưa chọn config",
+                Content = "Bạn phải chọn một config!",
+                Duration = 3,
+                Icon = "alert-circle"
+            })
+            return
+        end
+        local all = ConfigManager:AllConfigs()
+        local found, idx
+        for i,v in ipairs(all) do
+            if v.Name == selectedConfig then found = v idx = i break end
+        end
+        if found then
+            found:Destroy()
+            configDropdown:Refresh(getConfigList())
+            WindUI:Notify({
+                Title = "Đã xoá",
+                Content = "Config ["..selectedConfig.."] đã bị xoá!",
+                Duration = 3,
+                Icon = "trash"
+            })
+        else
+            WindUI:Notify({
+                Title = "Không tìm thấy",
+                Content = "Config ["..selectedConfig.."] không tồn tại!",
+                Duration = 3,
+                Icon = "alert-circle"
+            })
+        end
+    end
+})
+
+ConfigTab:Button({
+    Title = "Reload Danh Sách Config",
+    Callback = function()
+        configDropdown:Refresh(getConfigList())
+        WindUI:Notify({
+            Title = "Đã reload danh sách config",
+            Content = "Danh sách config đã được cập nhật!",
+            Duration = 2,
+            Icon = "refresh-cw"
+        })
+    end
+})
+
+
+-- Khi script khởi động: tự động load config nếu đã set auto load
+local function autoLoadConfigOnStart()
+    local name, enabled = readAutoLoadConfig()
+    if enabled and name ~= "" then
+        local all = ConfigManager:AllConfigs()
+        for _,v in ipairs(all) do
+            if v.Name == name then
+                v:Load()
+                WindUI:Notify({
+                    Title = "Auto Load Config",
+                    Content = "Đã tự động load config: " .. name,
+                    Duration = 3,
+                    Icon = "check"
+                })
+                break
+            end
+        end
+    end
+end
+autoLoadConfigOnStart()
+
 WindUI:Notify({
     Title = "AUT Hub Loaded",
     Content = "Hub đã sẵn sàng sử dụng!",
     Duration = 5,
     Icon = "check"
 })
-
--- Config: bạn có thể đăng ký các element vào Window.ConfigManager nếu muốn lưu cấu hình
--- Xem docs WindUI về ConfigManager để tích hợp nếu cần.
-
-
-print(ok)
