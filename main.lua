@@ -2,7 +2,7 @@
 
 local WindUI = loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua"))()
 local Window = WindUI:CreateWindow({
-    Title = "AUTHub",
+    Title = "AUT Multi-Tool Hub",
     Icon = "package",
     Author = "by Baolong",
     Folder = "AUTHub",
