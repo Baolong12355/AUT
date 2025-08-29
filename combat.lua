@@ -135,15 +135,15 @@ local function teleportToPosition(position)
     character.HumanoidRootPart.CFrame = CFrame.new(position)
 end
 
-local function teleportAboveTarget(target)
+local function teleportBelowTarget(target)
     local character = localPlayer.Character
     if not character or not character:FindFirstChild("HumanoidRootPart") or not isValidTarget(target) then return end
     local playerRoot = character.HumanoidRootPart
     local targetPos = target.HumanoidRootPart.Position
-    local abovePos = targetPos + Vector3.new(0, 4, 0)
+    local belowPos = targetPos + Vector3.new(0, -4, 0)
 
-    local lookDirection = (targetPos - abovePos).Unit
-    local newCFrame = CFrame.lookAt(abovePos, abovePos + lookDirection)
+    local lookDirection = (targetPos - belowPos).Unit
+    local newCFrame = CFrame.lookAt(belowPos, belowPos + lookDirection)
     character.HumanoidRootPart.CFrame = newCFrame
 end
 
@@ -254,7 +254,7 @@ local function startHeartbeatTeleport()
                 if isStunned() or isRagdolled() then
                     escapeToHeight(currentTarget)
                 else
-                    teleportAboveTarget(currentTarget)
+                    teleportBelowTarget(currentTarget)
                 end
             end
         else
@@ -264,7 +264,7 @@ local function startHeartbeatTeleport()
                 if isStunned() or isRagdolled() then
                     escapeToHeight(currentTarget)
                 else
-                    teleportAboveTarget(currentTarget)
+                    teleportBelowTarget(currentTarget)
                 end
             end
         end
