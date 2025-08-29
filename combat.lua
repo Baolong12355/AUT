@@ -24,6 +24,32 @@ local combatSettings = {
     lastTargetType = _G.CombatTargetType
 }
 
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Workspace = game:GetService("Workspace")
+local localPlayer = Players.LocalPlayer
+
+-- Global settings
+_G.CombatEnabled = _G.CombatEnabled or false
+_G.CombatTargetType = _G.CombatTargetType or "cultists"
+_G.CombatEscapeHeight = _G.CombatEscapeHeight or 30
+_G.CombatSelectedSkills = _G.CombatSelectedSkills or {"B"}
+_G.CrateCollecting = _G.CrateCollecting or false
+_G.ItemAutoSaving = _G.ItemAutoSaving or false
+_G.SlayerQuestActive = _G.SlayerQuestActive or false
+_G.LootEnabled = _G.LootEnabled or false
+_G.LootCollecting = _G.LootCollecting or false
+
+local combatSettings = {
+    selectedSkills = _G.CombatSelectedSkills,
+    escapeHeight = _G.CombatEscapeHeight,
+    targetType = _G.CombatTargetType,
+    currentSkillIndex = 1,
+    lastEnabled = _G.CombatEnabled,
+    lastTargetType = _G.CombatTargetType
+}
+
 local targetLists = {
     cultists = {
         "workspace.Living.Assailant",
@@ -135,15 +161,15 @@ local function teleportToPosition(position)
     character.HumanoidRootPart.CFrame = CFrame.new(position)
 end
 
-local function teleportBelowTarget(target)
+local function teleportBehindTarget(target)
     local character = localPlayer.Character
     if not character or not character:FindFirstChild("HumanoidRootPart") or not isValidTarget(target) then return end
     local playerRoot = character.HumanoidRootPart
-    local targetPos = target.HumanoidRootPart.Position
-    local belowPos = targetPos + Vector3.new(0, 3, 0)
+    local targetCFrame = target.HumanoidRootPart.CFrame
+    local behindPos = targetCFrame * CFrame.new(0, 0, 5)
 
-    local lookDirection = (targetPos - belowPos).Unit
-    local newCFrame = CFrame.lookAt(belowPos, belowPos + lookDirection)
+    local lookDirection = (target.HumanoidRootPart.Position - behindPos.Position).Unit
+    local newCFrame = CFrame.lookAt(behindPos.Position, behindPos.Position + lookDirection)
     character.HumanoidRootPart.CFrame = newCFrame
 end
 
@@ -238,7 +264,7 @@ function _G.ResetCombatTarget()
     chestToLoot = nil
 end
 
--- Heartbeat teleport logic
+-- Heartbeat teleport logic, không check target còn sống
 local function startHeartbeatTeleport()
     if heartbeatTPConnection then
         heartbeatTPConnection:Disconnect()
@@ -254,7 +280,7 @@ local function startHeartbeatTeleport()
                 if isStunned() or isRagdolled() then
                     escapeToHeight(currentTarget)
                 else
-                    teleportBelowTarget(currentTarget)
+                    teleportBehindTarget(currentTarget)
                 end
             end
         else
@@ -264,14 +290,14 @@ local function startHeartbeatTeleport()
                 if isStunned() or isRagdolled() then
                     escapeToHeight(currentTarget)
                 else
-                    teleportBelowTarget(currentTarget)
+                    teleportBehindTarget(currentTarget)
                 end
             end
         end
     end)
 end
 
--- Combat loop
+-- Combat loop: PHẢI check target còn tồn tại trong Living để đổi target!
 spawn(function()
     startHeartbeatTeleport()
     while true do
@@ -288,6 +314,7 @@ spawn(function()
         elseif not _G.CombatEnabled then
             task.wait()
         else
+            -- SỬA ĐÚNG: Luôn check target đã biến mất khỏi Living thì đổi target!
             if not currentTarget or not isTargetAlive(currentTarget) then
                 currentTarget = findRandomTarget()
             else
