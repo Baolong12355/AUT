@@ -140,7 +140,7 @@ local function teleportBelowTarget(target)
     if not character or not character:FindFirstChild("HumanoidRootPart") or not isValidTarget(target) then return end
     local playerRoot = character.HumanoidRootPart
     local targetPos = target.HumanoidRootPart.Position
-    local belowPos = targetPos + Vector3.new(0, -4.5, 0)
+    local belowPos = targetPos + Vector3.new(0, -4,5, 0)
 
     local lookDirection = (targetPos - belowPos).Unit
     local newCFrame = CFrame.lookAt(belowPos, belowPos + lookDirection)
