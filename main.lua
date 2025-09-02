@@ -1,4 +1,3 @@
--- AUT Main Loader - Quản lý tất cả script với Rayfield GUI
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
 -- Services
@@ -15,6 +14,7 @@ local SCRIPTS = {
     sell = REPO_BASE .. "sell.lua",
     trait = REPO_BASE .. "trait.lua",
     stats = REPO_BASE .. "stats.lua",
+    statsreset = REPO_BASE .. "statsreset.lua",  -- Script mới
     slayer = REPO_BASE .. "slayer.lua",
     rollbanner = REPO_BASE .. "rollbanner.lua",
     loot = REPO_BASE .. "loot.lua",
@@ -76,8 +76,6 @@ _G.LoadedScripts = {}
 _G.AutoSaveSelectedItems = {}
 _G.AutoSellExcludeList = {}
 _G.CombatSelectedSkills = {""}
-
--- Không còn hàm loadItemList, mọi nơi dùng _G.AvailableItems trực tiếp
 
 -- Load script from GitHub
 local function loadScript(name, url)
@@ -212,11 +210,9 @@ local StandAutoToggle = CombatTab:CreateToggle({
     Flag = "AutoStandEnabled",
     Callback = function(Value)
         getgenv().AutoStandEnabled = Value
-        -- Khi tắt thì nên set trạng thái về nil luôn cho chắc chắn
         if not Value then
             getgenv().AutoStandState = nil
         else
-            -- Khi bật mà chưa chọn mode thì mặc định là "on"
             if getgenv().AutoStandState ~= "on" and getgenv().AutoStandState ~= "off" then
                 getgenv().AutoStandState = "on"
             end
@@ -474,7 +470,6 @@ local TraitToggle = TraitTab:CreateToggle({
         if Value and not _G.LoadedScripts.trait then
             loadScript("trait", SCRIPTS.trait)
         end
-        -- Luôn gọi lại hàm này mỗi lần bật
         if _G.TriggerAutoPickTrait then
             _G.TriggerAutoPickTrait()
         end
@@ -581,6 +576,26 @@ local StatsAmountSlider = TraitTab:CreateSlider({
     Callback = function(Value)
         _G.AutoStatsAmount = Value
     end
+})
+
+-- Thêm phần Auto Stats Reset
+TraitTab:CreateSection("Auto Stats Reset")
+
+local StatsResetToggle = TraitTab:CreateToggle({
+    Name = "Auto Stats Reset",
+    CurrentValue = false,
+    Flag = "StatsResetEnabled",
+    Callback = function(Value)
+        _G.AutoStatsResetEnabled = Value
+        if Value and not _G.LoadedScripts.statsreset then
+            loadScript("statsreset", SCRIPTS.statsreset)
+        end
+    end
+})
+
+TraitTab:CreateParagraph({
+    Title = "Ghi Chú Stats Reset",
+    Content = "• Tự động reset stats liên tục mỗi frame\n• Sử dụng ability ID hiện tại của player\n• Chạy ở background khi được bật"
 })
 
 TraitTab:CreateSection("Auto Ascend & Feed")
