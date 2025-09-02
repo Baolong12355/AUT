@@ -1,12 +1,9 @@
--- resetstats.lua
--- Auto Reset Stats Module
-
 -- Services
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 
--- Variables
+-- Player
 local player = Players.LocalPlayer
 
 -- Remote Function
@@ -18,38 +15,92 @@ local ResetStats = ReplicatedStorage:WaitForChild("ReplicatedModules")
     :WaitForChild("RF")
     :WaitForChild("ResetStats")
 
--- Get current ability ID
-local function getCurrentAbilityID()
-    local ability = player:WaitForChild("Data"):FindFirstChild("Ability")
-    return ability and ability.Value or nil
+-- Biến trạng thái
+local currentAbilityID = nil
+local heartbeatConnection = nil
+
+-- Cập nhật ability ID
+local function updateAbilityID()
+    local success, result = pcall(function()
+        local data = player:WaitForChild("Data", 10)
+        local ability = data and data:WaitForChild("Ability", 10)
+        return ability and ability.Value
+    end)
+
+    if success then
+        currentAbilityID = result
+    else
+        currentAbilityID = nil
+    end
 end
 
--- Main reset stats function
-local function resetStatsLoop()
-    if not _G.AutoResetStatsEnabled then return end
+-- Theo dõi thay đổi ability
+local abilityConnection = nil
+local function setupAbilityWatcher()
+    updateAbilityID()
     
-    local id = getCurrentAbilityID()
-    if id then
-        pcall(function()
-            ResetStats:InvokeServer(id)
+    -- Disconnect connection cũ nếu có
+    if abilityConnection then
+        abilityConnection:Disconnect()
+        abilityConnection = nil
+    end
+    
+    local data = player:FindFirstChild("Data")
+    local ability = data and data:FindFirstChild("Ability")
+
+    if ability then
+        abilityConnection = ability:GetPropertyChangedSignal("Value"):Connect(function()
+            currentAbilityID = ability.Value
         end)
     end
 end
 
--- Connect to heartbeat when enabled
-_G.ResetStatsConnection = RunService.Heartbeat:Connect(function()
-    resetStatsLoop()
-end)
+-- Bắt đầu auto reset stats
+local function startStatsReset()
+    if heartbeatConnection then return end
+    
+    setupAbilityWatcher()
+    
+    heartbeatConnection = RunService.Heartbeat:Connect(function()
+        if not _G.AutoStatsResetEnabled then
+            if heartbeatConnection then
+                heartbeatConnection:Disconnect()
+                heartbeatConnection = nil
+            end
+            return
+        end
+        
+        if currentAbilityID then
+            pcall(function()
+                ResetStats:InvokeServer(currentAbilityID)
+            end)
+        end
+    end)
+end
 
--- Cleanup function
-local function cleanup()
-    if _G.ResetStatsConnection then
-        _G.ResetStatsConnection:Disconnect()
-        _G.ResetStatsConnection = nil
+-- Dừng auto reset stats
+local function stopStatsReset()
+    if heartbeatConnection then
+        heartbeatConnection:Disconnect()
+        heartbeatConnection = nil
+    end
+    if abilityConnection then
+        abilityConnection:Disconnect()
+        abilityConnection = nil
     end
 end
 
--- Handle disable
-game.Players.PlayerRemoving:Connect(cleanup)
+-- Kiểm tra trạng thái và bắt đầu nếu cần
+if _G.AutoStatsResetEnabled then
+    startStatsReset()
+end
 
-return true
+-- Theo dõi thay đổi trạng thái
+local statusConnection = nil
+statusConnection = RunService.Heartbeat:Connect(function()
+    if _G.AutoStatsResetEnabled and not heartbeatConnection then
+        startStatsReset()
+    elseif not _G.AutoStatsResetEnabled and heartbeatConnection then
+        stopStatsReset()
+    end
+end)
