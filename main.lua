@@ -582,7 +582,7 @@ local StatsAmountSlider = TraitTab:CreateSlider({
 TraitTab:CreateSection("Auto Stats Reset")
 
 local StatsResetToggle = TraitTab:CreateToggle({
-    Name = "Auto Stats Reset",
+    Name = "ucoin burner",
     CurrentValue = false,
     Flag = "StatsResetEnabled",
     Callback = function(Value)
@@ -593,10 +593,6 @@ local StatsResetToggle = TraitTab:CreateToggle({
     end
 })
 
-TraitTab:CreateParagraph({
-    Title = "Ghi Chú Stats Reset",
-    Content = "• Tự động reset stats liên tục mỗi frame\n• Sử dụng ability ID hiện tại của player\n• Chạy ở background khi được bật"
-})
 
 TraitTab:CreateSection("Auto Ascend & Feed")
 
