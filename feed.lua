@@ -2,6 +2,7 @@
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
 local LocalPlayer = Players.LocalPlayer
 
 local GetAllAbilityShards = ReplicatedStorage.ReplicatedModules.KnitPackage.Knit.Services.CraftingService.RF.GetAllAbilityShards
@@ -33,12 +34,12 @@ function _G.FeedAllShards()
     end
 end
 
-task.spawn(function()
-    task.wait(0.1)
-    while true do
-        if _G.FeedShardsEnabled then
-            _G.FeedAllShards()
-        end
-        task.wait(0.25)
+local lastTick = 0
+
+RunService.Heartbeat:Connect(function(dt)
+    lastTick += dt
+    if _G.FeedShardsEnabled and lastTick >= 0.25 then
+        lastTick = 0
+        _G.FeedAllShards()
     end
 end)
