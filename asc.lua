@@ -2,6 +2,7 @@
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
 local LocalPlayer = Players.LocalPlayer
 
 _G.AutoAscendEnabled = _G.AutoAscendEnabled or false
@@ -36,11 +37,8 @@ local function autoAscend()
     end
 end
 
-task.spawn(function()
-    while true do
-        if _G.AutoAscendEnabled then
-            pcall(autoAscend)
-        end
-        task.wait(0.1)
+RunService.Heartbeat:Connect(function()
+    if _G.AutoAscendEnabled then
+        pcall(autoAscend)
     end
 end)
